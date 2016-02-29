@@ -7,6 +7,8 @@ renderer.setPixelRatio(window.devicePixelRatio);
 document.body.appendChild(renderer.domElement);
 
 var debugOn = false;
+var starCount = 10000;
+var pointCloudCount = 5;
 
 // Create a three.js scene.
 var scene = new THREE.Scene();
@@ -76,35 +78,63 @@ function getRandomArbitrary(min, max) {
     return Math.random() * (max - min) + min;
 }
 
-var material = new THREE.PointsMaterial({
-    color: 0xffffcc
-    //wireframe property not supported on PointsMaterial
-});
 
-var geometry = new THREE.Geometry();
+
+
 var x, y, z;
 
-for(var i = 0; i < 10000; i++){
-    x = getRandomArbitrary(boxWidth/16, boxWidth*4);
-    y = getRandomArbitrary(boxWidth/16, boxWidth*4);
-    z = getRandomArbitrary(boxWidth/16, boxWidth*4);
+for(var j = 0; j < pointCloudCount; j++){
+    var value = Math.random() * 0xFF | 0;
+    var grayscale = (value << 16) | (value << 8) | value;
 
-    geometry.vertices.push(new THREE.Vector3(x, y, z));
+    var geometry = new THREE.Geometry();
+
+
+    var material = new THREE.PointsMaterial({
+        color: grayscale
+        //wireframe property not supported on PointsMaterial
+    });
+
+
+    for(var i = 0; i < starCount/pointCloudCount; i++){
+        x = getRandomArbitrary(boxWidth/16, boxWidth*4);
+        y = getRandomArbitrary(boxWidth/16, boxWidth*4);
+        z = getRandomArbitrary(boxWidth/16, boxWidth*4);
+
+        geometry.vertices.push(new THREE.Vector3(x, y, z));
+    }
+
+    var pointCloud = new THREE.Points(geometry, material);
+    centerObject(pointCloud);
+    scene.add(pointCloud);
 }
 
-var pointCloud = new THREE.Points(geometry, material);
 
-centerObject(pointCloud);
+
+
+
+/*for(var p = 0; p < 10000; p++){
+
+    var value = Math.random() * 0xFF | 0;
+    var grayscale = (value << 16) | (value << 8) | value;
+    var color = grayscale;
+    var target = pointCloud.children[p];
+
+    target.color.set(color);
+    target.geometry.colorsNeedUpdate = true;
+}*/
+
+
 
 //pointCloud.position.set(-boxWidth*2,-boxWidth*2,-boxWidth*2);
 
-scene.add(pointCloud);
+
 
 
 // Request animation frame loop function
 var lastRender = 0;
 function animate(timestamp) {
-    var delta = Math.min(timestamp - lastRender, 500);
+    //var delta = Math.min(timestamp - lastRender, 500);
     lastRender = timestamp;
 
     // Apply rotation to cube mesh
