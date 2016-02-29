@@ -1,0 +1,18 @@
+{
+  "name": "olympics-vr-prototype",
+  "version": "0.1.0",
+  "description": "A prototype of the night sky VR functionality.",
+  "main": "index.js",
+  "dependencies": {
+    "webvr-boilerplate": "^0.3.7"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://git.gladeye.org/michael/olympics-app-prototype.git"
+  },
+  "author": "Michael Andrew (michael.andrew@gladeye.co.nz)"
+}
