@@ -2,7 +2,7 @@
 # CSV To JSON Converson Script
 #
 # @author Michael Andrew (michael.andrew@gladeye.co.nz)
-# @usage python csv-to-json.py ../tmp/data.csv ../online/assets/js/data.json.gz
+# @usage python csv-to-json.py ../tmp/data.csv ../online/assets/js/data.json
 #
 
 import csv
@@ -11,8 +11,7 @@ import sys
 import urllib2
 import gzip
 import pandas
-
-
+import numpy as np
 
 URL = "https://github.com/astronexus/HYG-Database/raw/master/hygdata_v3.csv" #url to star data csv on GitHub
 csvFilePath = sys.argv[1] #destination path of downloaded csv file
@@ -24,17 +23,18 @@ with open(csvFilePath,'wb') as f:
     f.close()
 print "Download completed. Converting target columns from CSV to GZipped JSON..."
 
-#csvfile = open(csvFilePath, 'r')
 jsonfileGzipped = gzip.open(jsonFilePath+'.gz', 'wb')
 jsonfile = open(jsonFilePath, 'w')
 
-#reader = csv.reader( csvfile)
-#included_cols = [1, 7, 10, 18, 19, 20]
+#pandas.set_option('display.precision', 15)
 
 colnames = ['id', 'proper', 'dist', 'x', 'y', 'z']
-data = pandas.read_csv(csvFilePath, names=colnames, low_memory=False)
+data = pandas.read_csv(csvFilePath, engine='c', usecols=colnames, low_memory=False, delimiter = ',', skip_blank_lines = True, index_col = 0, header = 0, float_precision = 10,  dtype={'id': np.int64, 'proper': str, 'dist': np.float64, 'x': np.float64,'y': np.float64, 'z': np.float64})
 
-myJSON = data.to_json(path_or_buf = None, orient = 'records', date_format = 'epoch', double_precision = 10, force_ascii = False, date_unit = 'ms', default_handler = None)
+print data.dtypes
+
+myJSON = data.to_json(path_or_buf = None, orient = 'records', date_format = 'epoch', double_precision = 10, force_ascii = False, date_unit = 'ms', default_handler = convertHandler)
+
 
 jsonfileGzipped.write(myJSON)
 jsonfile.write(myJSON)
