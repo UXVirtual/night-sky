@@ -12,7 +12,7 @@ function initScene(){
     var debugOn = true;
     var starCount = 10000;
     var pointCloudCount = 8;
-    var distanceScale = 1;
+    var distanceScale = 5;
     var starMagnitudes = 8; //number of visible star magnitude buckets
 
 // Create a three.js scene.
@@ -122,11 +122,15 @@ function initScene(){
         }*/
 
         var targetPointCloudGeometry;
+        var doInsertPoint = true;
 
         //determine which color bucket the star should go into
         if(starData.proper[l] === 'Sol'){
             console.log('Found the sun');
+            //doInsertPoint = false;
             targetPointCloudGeometry = pointCloudGeometries[7];
+
+            console.log(starData.proper[l],starData.spect[l]);
         }else{
             if(starData.spect[l] !== null){
                 switch(starData.spect[l].charAt(0)){
@@ -179,14 +183,31 @@ function initScene(){
             targetSize = 7;
         }
 
+        if(starData.dist[l] <= 35.5745){
+            //doInsertPoint = false;
+        }else if(starData.dist[l] > 35.5745 && starData.dist[l] <= 54.5256){
+            //doInsertPoint = false;
+        }else if(starData.dist[l] > 54.5256 && starData.dist[l] <= 71.1238){
+            //doInsertPoint = false;
+        }else if(starData.dist[l] > 71.1238 && starData.dist[l] <= 86.6551){
+            //doInsertPoint = false;
+        }else if(starData.dist[l] > 86.6551 && starData.dist[l] <= 101.0101){
+            //doInsertPoint = false;
+        }else if(starData.dist[l] > 101.0101){
+            //doInsertPoint = false;
+        }
+
         //console.log(targetPointCloudGeometry);
 
-        targetPointCloudGeometry[targetSize].vertices.push(new THREE.Vector3(x,y,z));
+        if(doInsertPoint){
+            targetPointCloudGeometry[targetSize].vertices.push(new THREE.Vector3(x,y,z));
+        }
+
 
 
     }
 
-    console.log(starData);
+
 
 
 
@@ -238,7 +259,7 @@ function initScene(){
         for(var m = 0; m < starMagnitudes; m++){
             var material = new THREE.PointsMaterial({
                 color: color,
-                size: starMagnitudes-m+1
+                size: (starMagnitudes-m+1)
                 //wireframe property not supported on PointsMaterial
             });
 
