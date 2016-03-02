@@ -28,12 +28,12 @@ jsonfile = open(jsonFilePath, 'w')
 
 #pandas.set_option('display.precision', 15)
 
-colnames = ['id', 'proper', 'dist', 'x', 'y', 'z']
-data = pandas.read_csv(csvFilePath, engine='c', usecols=colnames, low_memory=False, delimiter = ',', skip_blank_lines = True, index_col = 0, header = 0, float_precision = 10,  dtype={'id': np.int64, 'proper': str, 'dist': np.float64, 'x': np.float64,'y': np.float64, 'z': np.float64})
+colnames = ['id', 'proper', 'mag', 'dist', 'x', 'y', 'z', 'spect']
+data = pandas.read_csv(csvFilePath, engine='c', usecols=colnames, low_memory=False, delimiter = ',', skip_blank_lines = True, index_col = 0, header = 0, float_precision = 10,  dtype={'id': np.int64, 'proper': str, 'dist': np.float64, 'x': np.float64,'y': np.float64, 'z': np.float64, 'spect': str, 'mag': np.float64})
 
 print data.dtypes
 
-myJSON = data.to_json(path_or_buf = None, orient = 'records', date_format = 'epoch', double_precision = 10, force_ascii = False, date_unit = 'ms', default_handler = convertHandler)
+myJSON = data.to_json(path_or_buf = None, orient = 'records', date_format = 'epoch', double_precision = 10, force_ascii = False, date_unit = 'ms')
 
 
 jsonfileGzipped.write(myJSON)
