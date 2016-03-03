@@ -14,8 +14,16 @@ Google Cardboard apps. One of the contributors is the a main developer at AltSpa
     ```
     python setup.py install
     ```
+    
+3.  Install Webpack globally: `npm install webpack -g`
 
-## Testing
+4.  Install the Webpack development server: `npm install webpack-dev-server -g`
+
+## Developers
+
+*   Run `webpack --progress --colors --watch` to watch and automatically recompile resources.
+
+*   Run `webpack-dev-server --progress --colors` to start the web server then access the prototype on http://localhost:8080
 
 *   On iOS Download and install WebView from the iOS app store. Enter the desired URL into the WKWebView tab to simulate
     running the app in the WebView accessible in Cordova.

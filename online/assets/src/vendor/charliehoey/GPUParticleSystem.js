@@ -15,6 +15,8 @@
  *
  */
 
+import THREE from 'three'
+
 THREE.GPUParticleSystem = function(options) {
 
   var self = this;

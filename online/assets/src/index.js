@@ -1,6 +1,58 @@
+import { SpriteText2D, textAlign } from 'three-text2d'
+
+import THREE from 'three'
+
+import 'webvr-polyfill/src/main'
+
+import 'webvr-boilerplate'
+
+import $ from 'jquery'
+
+import './vendor/three/examples/js/controls/VRControls'
+import './vendor/three/examples/js/effects/VREffect'
+
+import './vendor/charliehoey/GPUParticleSystem'
+
+WebVRConfig = {
+    /**
+     * webvr-polyfill configuration
+     */
+
+    // Forces availability of VR mode.
+    FORCE_ENABLE_VR: false, // Default: false.
+    // Complementary filter coefficient. 0 for accelerometer, 1 for gyro.
+    K_FILTER: 0.98, // Default: 0.98.
+    // How far into the future to predict during fast motion.
+    PREDICTION_TIME_S: 0.040, // Default: 0.040 (in seconds).
+    // Flag to disable touch panner. In case you have your own touch controls
+    TOUCH_PANNER_DISABLED: false, // Default: false.
+    // Enable yaw panning only, disabling roll and pitch. This can be useful for
+    // panoramas with nothing interesting above or below.
+    //YAW_ONLY: true, // Default: false.
+
+    /**
+     * webvr-boilerplate configuration
+     */
+    // Forces distortion in VR mode.
+    FORCE_DISTORTION: false, // Default: false.
+    // Override the distortion background color.
+    // DISTORTION_BGCOLOR: {x: 1, y: 0, z: 0, w: 1}, // Default: (0,0,0,1).
+    // Prevent distortion from happening.
+    PREVENT_DISTORTION: false, // Default: false.
+    // Show eye centers for debugging.
+    SHOW_EYE_CENTERS: false, // Default: false.
+    // Prevent the online DPDB from being fetched.
+    NO_DPDB_FETCH: true  // Default: false.
+};
+
 var starData;
 
+//console.log(THREE);
+
 function initScene(){
+
+    console.log('initializing scene')
+
     // Setup three.js WebGL renderer. Note: Antialiasing is a big performance hit.
 // Only enable it if you actually need to.
     var renderer = new THREE.WebGLRenderer({antialias: true});
@@ -108,19 +160,6 @@ function initScene(){
         //assign points to geometries with specific colors - use first letter of spect value to define color
 
 
-
-        /*if(starData.dist[l] <= 35.5745){
-            pointCloudGeometries[0].vertices.push(new THREE.Vector3(x,y,z));
-        }else if(starData.dist[l] > 35.5745 && starData.dist[l] <= 54.5256){
-            pointCloudGeometries[1].vertices.push(new THREE.Vector3(x,y,z));
-        }else if(starData.dist[l] > 54.5256 && starData.dist[l] <= 71.1238){
-            pointCloudGeometries[2].vertices.push(new THREE.Vector3(x,y,z));
-        }else if(starData.dist[l] > 71.1238 && starData.dist[l] <= 86.6551){
-            pointCloudGeometries[3].vertices.push(new THREE.Vector3(x,y,z));
-        }else if(starData.dist[l] > 86.6551 && starData.dist[l] <= 101.0101){
-            pointCloudGeometries[4].vertices.push(new THREE.Vector3(x,y,z));
-        }*/
-
         var targetPointCloudGeometry;
         var doInsertPoint = true;
 
@@ -129,6 +168,13 @@ function initScene(){
             console.log('Found the sun');
             //doInsertPoint = false;
             targetPointCloudGeometry = pointCloudGeometries[7];
+
+
+
+            var sprite = new SpriteText2D(starData.proper[l], { align: new THREE.Vector2(0, 0),  font: '40px Arial', fillStyle: '#ffffff' , antialias: false })
+            scene.add(sprite);
+
+            sprite.lookAt(camera.position);
 
             console.log(starData.proper[l],starData.spect[l]);
         }else{
@@ -186,13 +232,13 @@ function initScene(){
         if(starData.dist[l] <= 35.5745){
             //doInsertPoint = false;
         }else if(starData.dist[l] > 35.5745 && starData.dist[l] <= 54.5256){
-            //doInsertPoint = false;
+            doInsertPoint = false;
         }else if(starData.dist[l] > 54.5256 && starData.dist[l] <= 71.1238){
-            //doInsertPoint = false;
+            doInsertPoint = false;
         }else if(starData.dist[l] > 71.1238 && starData.dist[l] <= 86.6551){
-            //doInsertPoint = false;
+            doInsertPoint = false;
         }else if(starData.dist[l] > 86.6551 && starData.dist[l] <= 101.0101){
-            //doInsertPoint = false;
+            doInsertPoint = false;
         }else if(starData.dist[l] > 101.0101){
             //doInsertPoint = false;
         }
@@ -206,20 +252,6 @@ function initScene(){
 
 
     }
-
-
-
-
-
-    /*
-     O0	40,000 K	72.5 nm	Blue
-     B0	20,000 K	145 nm	Light Blue
-     A0	10,000 K	290 nm	White
-     F0	7,500 K	387 nm	Yellow-White
-     G0	5,500 K	527 nm	Yellow
-     K0	4,000 K	725 nm	Orange
-     M0	3,000 K	966 nm	Red
-     */
 
 
     for(var j = 0; j < pointCloudCount; j++){
@@ -274,27 +306,6 @@ function initScene(){
     }
 
 
-
-
-
-    /*for(var p = 0; p < 10000; p++){
-
-     var value = Math.random() * 0xFF | 0;
-     var grayscale = (value << 16) | (value << 8) | value;
-     var color = grayscale;
-     var target = pointCloud.children[p];
-
-     target.color.set(color);
-     target.geometry.colorsNeedUpdate = true;
-     }*/
-
-
-
-//pointCloud.position.set(-boxWidth*2,-boxWidth*2,-boxWidth*2);
-
-
-
-
 // Request animation frame loop function
     var lastRender = 0;
     function animate(timestamp) {
@@ -334,6 +345,9 @@ function initScene(){
 
 
 function loadStarData(){
+
+    console.log('Getting star data...')
+
     $.getJSON( 'assets/data/data.json.gz', {}, function(data){
 
         console.log(data);
@@ -374,9 +388,6 @@ function loadStarData(){
     });
 }
 
+console.log('document is ready')
 
-$( document ).ready(function() {
-
-    loadStarData();
-
-});
+loadStarData();
