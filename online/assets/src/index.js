@@ -170,13 +170,7 @@ function initScene(){
             targetPointCloudGeometry = pointCloudGeometries[7];
 
 
-
-            var sprite = new SpriteText2D(starData.proper[l], { align: new THREE.Vector2(0, 0),  font: '40px Arial', fillStyle: '#ffffff' , antialias: false })
-            scene.add(sprite);
-
-            sprite.lookAt(camera.position);
-
-            console.log(starData.proper[l],starData.spect[l]);
+            //console.log(starData.proper[l],starData.spect[l]);
         }else{
             if(starData.spect[l] !== null){
                 switch(starData.spect[l].charAt(0)){
@@ -231,6 +225,15 @@ function initScene(){
 
         if(starData.dist[l] <= 35.5745){
             //doInsertPoint = false;
+
+            if(l < 5 && starData.proper[l] !== null){
+                var sprite = new SpriteText2D(starData.proper[l], { align: new THREE.Vector2(0, 0),  font: '10px Arial', fillStyle: '#ffffff' , antialias: false })
+                scene.add(sprite);
+
+                sprite.lookAt(camera.position);
+            }
+
+
         }else if(starData.dist[l] > 35.5745 && starData.dist[l] <= 54.5256){
             doInsertPoint = false;
         }else if(starData.dist[l] > 54.5256 && starData.dist[l] <= 71.1238){
