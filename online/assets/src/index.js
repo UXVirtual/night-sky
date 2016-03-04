@@ -63,15 +63,16 @@ function initScene(){
 
     var debugOn = true;
     var starCount = 10000;
+    var normalizeRadius = 20;
     var pointCloudCount = 8;
-    var distanceScale = 5;
+    var distanceScale = 1; //keep this at 1 now that we are normalizing star distance
     var starMagnitudes = 8; //number of visible star magnitude buckets
 
 // Create a three.js scene.
     var scene = new THREE.Scene();
 
 // Create a three.js camera.
-    var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
+    var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
 
 // Apply VR headset positional data to camera.
     var controls = new THREE.VRControls(camera);
@@ -154,6 +155,11 @@ function initScene(){
         y = starData.y[l]*distanceScale;
         z = starData.z[l]*distanceScale;
 
+        //normalize distance of stars, but keep apparent position in sky - we'll use the mag value to determine size later
+        x = x * normalizeRadius/starData.dist[l];
+        y = y * normalizeRadius/starData.dist[l];
+        z = z * normalizeRadius/starData.dist[l];
+
         //assign points to geometries with specific colors - use first letter of spect value to define color
 
 
@@ -165,27 +171,29 @@ function initScene(){
         //console.log(starData.con[l]);
 
 
-        if(starData.con[l] === "CMa"){
+        if(starData.con[l] === "CMa" || starData.proper[l] === "Sol" || starData.proper[l] === "Rigil Kentaurus" || starData.proper[l] === "Hadar"){
             //console.log('Found cma star');
             //doInsertPoint = false;
 
 
             //console.log('Found',starData.proper[l]);
-
+            targetPointCloudGeometry = pointCloudGeometries[7];
 
             if(starData.proper[l] !== null){
-                targetPointCloudGeometry = pointCloudGeometries[7];
+
                 var sprite = new SpriteText2D(starData.proper[l], { align: new THREE.Vector2(0, 0),  font: '10px Arial', fillStyle: '#ffffff' , antialias: false })
-                sprite.position.set(starData.x[l],starData.y[l],starData.z[l]);
+                sprite.position.set(x,y,z);
                 scene.add(sprite);
 
                 sprite.lookAt(camera.position);
 
-                var distance = sprite.position.distanceTo(camera.position);
+                sprite.translateZ( -200 );
 
-                console.log('Distance from camera: ',distance);
+                //var distance = sprite.position.distanceTo(camera.position);
 
-                sprite.translateZ( (distance*-1)-300 );
+                //console.log('Distance from camera: ',distance);
+
+                //sprite.translateZ( (distance*-1)-50 );
 
                 //console.log(starData.proper[l],starData.spect[l]);
             }
@@ -254,28 +262,37 @@ function initScene(){
 
         targetSize = 0;*/
 
-
+        //targetSize = 0;
         if (starData.mag[l] < 0) {
             targetSize = 0;
         } else if (starData.mag[l] >= 0 && starData.mag[l] < 1) {
             targetSize = 1;
+            //doInsertPoint = false;
         } else if (starData.mag[l] >= 1 && starData.mag[l] < 2) {
             targetSize = 2;
+            doInsertPoint = false;
         } else if (starData.mag[l] >= 2 && starData.mag[l] < 3) {
             targetSize = 3;
+            doInsertPoint = false;
         } else if (starData.mag[l] >= 3 && starData.mag[l] < 4) {
             targetSize = 4;
+            doInsertPoint = false;
         } else if (starData.mag[l] >= 4 && starData.mag[l] < 5) {
             targetSize = 5;
+            doInsertPoint = false;
         } else if (starData.mag[l] >= 5 && starData.mag[l] < 6) {
             targetSize = 6;
+            doInsertPoint = false;
         } else if (starData.mag[l] >= 6 && starData.mag[l] < 7) {
             targetSize = 7;
+            doInsertPoint = false;
         }
 
+        //targetSize = 0;
 
 
-                if(starData.dist[l] <= 35.5745){
+
+        if(starData.dist[l] <= 35.5745){
             //doInsertPoint = false;
 
             /*if(l < 300 && starData.proper[l] !== null){
@@ -294,7 +311,7 @@ function initScene(){
 
 
         }else if(starData.dist[l] > 35.5745 && starData.dist[l] <= 54.5256){
-            doInsertPoint = false;
+            //doInsertPoint = false;
         }else if(starData.dist[l] > 54.5256 && starData.dist[l] <= 71.1238){
             doInsertPoint = false;
         }else if(starData.dist[l] > 71.1238 && starData.dist[l] <= 86.6551){
@@ -302,7 +319,7 @@ function initScene(){
         }else if(starData.dist[l] > 86.6551 && starData.dist[l] <= 101.0101){
             doInsertPoint = false;
         }else if(starData.dist[l] > 101.0101){
-            //doInsertPoint = false;
+            doInsertPoint = false;
         }
 
         //console.log(targetPointCloudGeometry);
@@ -353,7 +370,7 @@ function initScene(){
         for(var m = 0; m < starMagnitudes; m++){
             var material = new THREE.PointsMaterial({
                 color: color,
-                size: (starMagnitudes-m+1)
+                size: (starMagnitudes-m+1)/80
                 //wireframe property not supported on PointsMaterial
             });
 
