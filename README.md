@@ -89,3 +89,7 @@ full list of the updated column names, see the official database documentation o
 ## Examples
 
 *   [Three JS Point Cloud Experiment](http://codepen.io/seanseansean/pen/EaBZEY)
+
+*   http://www.html5rocks.com/en/tutorials/casestudies/100000stars/
+
+*   http://stars.chromeexperiments.com/

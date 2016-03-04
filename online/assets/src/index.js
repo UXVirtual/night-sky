@@ -135,9 +135,6 @@ function initScene(){
         return Math.random() * (max - min) + min;
     }
 
-
-
-
     var x, y, z;
 
     //generate point cloud geometry
@@ -164,14 +161,41 @@ function initScene(){
         var doInsertPoint = true;
 
         //determine which color bucket the star should go into
-        if(starData.proper[l] === 'Sol'){
-            console.log('Found the sun');
+
+        //console.log(starData.con[l]);
+
+
+        if(starData.con[l] === "CMa"){
+            //console.log('Found cma star');
             //doInsertPoint = false;
-            targetPointCloudGeometry = pointCloudGeometries[7];
 
 
-            //console.log(starData.proper[l],starData.spect[l]);
+            //console.log('Found',starData.proper[l]);
+
+
+            if(starData.proper[l] !== null){
+                targetPointCloudGeometry = pointCloudGeometries[7];
+                var sprite = new SpriteText2D(starData.proper[l], { align: new THREE.Vector2(0, 0),  font: '10px Arial', fillStyle: '#ffffff' , antialias: false })
+                sprite.position.set(starData.x[l],starData.y[l],starData.z[l]);
+                scene.add(sprite);
+
+                sprite.lookAt(camera.position);
+
+                var distance = sprite.position.distanceTo(camera.position);
+
+                console.log('Distance from camera: ',distance);
+
+                sprite.translateZ( (distance*-1)-300 );
+
+                //console.log(starData.proper[l],starData.spect[l]);
+            }
+
+
+
         }else{
+
+            //doInsertPoint = false;
+
             if(starData.spect[l] !== null){
                 switch(starData.spect[l].charAt(0)){
                     case "O":
@@ -201,37 +225,72 @@ function initScene(){
             }
         }
 
+
+
+
         //determine which size bucket the star should go into
 
         var targetSize;
 
-        if(starData.mag[l] < 0){
+        /*if(starData.absmag[l] >= 15){
             targetSize = 0;
-        }else if(starData.mag[l] >= 0 && starData.mag[l] < 1){
+        }else if(starData.absmag[l] >= 10 && starData.absmag[l] < 15){
             targetSize = 1;
-        }else if(starData.mag[l] >= 1 && starData.mag[l] < 2){
+        }else if(starData.absmag[l] >= 5 && starData.absmag[l] < 10){
             targetSize = 2;
-        }else if(starData.mag[l] >= 2 && starData.mag[l] < 3){
+        }else if(starData.absmag[l] >= 0 && starData.absmag[l] < 5){
             targetSize = 3;
-        }else if(starData.mag[l] >= 3 && starData.mag[l] < 4){
+        }else if(starData.absmag[l] >= -5 && starData.absmag[l] < 0){
             targetSize = 4;
-        }else if(starData.mag[l] >= 4 && starData.mag[l] < 5){
+        }else if(starData.absmag[l] >= -10 && starData.absmag[l] < -5){
             targetSize = 5;
-        }else if(starData.mag[l] >= 5 && starData.mag[l] < 6){
+        }else if(starData.absmag[l] >= -15 && starData.absmag[l] < -10){
             targetSize = 6;
-        }else if(starData.mag[l] >= 6 && starData.mag[l] < 7){
+        }else if(starData.absmag[l] >= -20 && starData.absmag[l] < -15){
+            targetSize = 7;
+        }else{
             targetSize = 7;
         }
 
-        if(starData.dist[l] <= 35.5745){
+        targetSize = 0;*/
+
+
+        if (starData.mag[l] < 0) {
+            targetSize = 0;
+        } else if (starData.mag[l] >= 0 && starData.mag[l] < 1) {
+            targetSize = 1;
+        } else if (starData.mag[l] >= 1 && starData.mag[l] < 2) {
+            targetSize = 2;
+        } else if (starData.mag[l] >= 2 && starData.mag[l] < 3) {
+            targetSize = 3;
+        } else if (starData.mag[l] >= 3 && starData.mag[l] < 4) {
+            targetSize = 4;
+        } else if (starData.mag[l] >= 4 && starData.mag[l] < 5) {
+            targetSize = 5;
+        } else if (starData.mag[l] >= 5 && starData.mag[l] < 6) {
+            targetSize = 6;
+        } else if (starData.mag[l] >= 6 && starData.mag[l] < 7) {
+            targetSize = 7;
+        }
+
+
+
+                if(starData.dist[l] <= 35.5745){
             //doInsertPoint = false;
 
-            if(l < 5 && starData.proper[l] !== null){
+            /*if(l < 300 && starData.proper[l] !== null){
                 var sprite = new SpriteText2D(starData.proper[l], { align: new THREE.Vector2(0, 0),  font: '10px Arial', fillStyle: '#ffffff' , antialias: false })
+                sprite.position.set(starData.x[l],starData.y[l],starData.z[l]);
                 scene.add(sprite);
 
                 sprite.lookAt(camera.position);
-            }
+
+                var distance = sprite.position.distanceTo(camera.position);
+
+                console.log(distance);
+
+                sprite.translateZ( (distance*-1) );
+            }*/
 
 
         }else if(starData.dist[l] > 35.5745 && starData.dist[l] <= 54.5256){
@@ -248,7 +307,7 @@ function initScene(){
 
         //console.log(targetPointCloudGeometry);
 
-        if(doInsertPoint){
+        if(doInsertPoint && typeof targetPointCloudGeometry !== 'undefined' &&  typeof targetPointCloudGeometry[targetSize] !== 'undefined'){
             targetPointCloudGeometry[targetSize].vertices.push(new THREE.Vector3(x,y,z));
         }
 
@@ -366,7 +425,9 @@ function loadStarData(){
             z: new Float64Array(n),
             spect: new Array(n),
             mag: new Float64Array(n),
-            count: n
+            count: n,
+            absmag: new Float64Array(n),
+            con: new Array(n)
         };
 
         //populated typed arrays with star data
@@ -380,12 +441,14 @@ function loadStarData(){
             starData.z[i] = data[i].z;
             starData.spect[i] = data[i].spect;
             starData.mag[i] = data[i].mag;
+            starData.absmag[i] = data[i].absmag;
+            starData.con[i] = data[i].con;
             i++;
         }
 
         console.log('Star data loaded.');
 
-        //console.log(data);
+        console.log(data);
 
         initScene();
     });

@@ -2,7 +2,7 @@
 # CSV To JSON Converson Script
 #
 # @author Michael Andrew (michael.andrew@gladeye.co.nz)
-# @usage python csv-to-json.py ../tmp/data.csv ../online/assets/js/data.json
+# @usage python csv-to-json.py ../tmp/data.csv ../online/assets/data/data.json
 #
 
 import csv
@@ -28,8 +28,8 @@ jsonfile = open(jsonFilePath, 'w')
 
 #pandas.set_option('display.precision', 15)
 
-colnames = ['id', 'proper', 'mag', 'dist', 'x', 'y', 'z', 'spect']
-data = pandas.read_csv(csvFilePath, engine='c', usecols=colnames, low_memory=False, delimiter = ',', skip_blank_lines = True, index_col = 0, header = 0, float_precision = 10,  dtype={'id': np.int64, 'proper': str, 'dist': np.float64, 'x': np.float64,'y': np.float64, 'z': np.float64, 'spect': str, 'mag': np.float64})
+colnames = ['id', 'proper', 'mag', 'absmag', 'dist', 'x', 'y', 'z', 'spect', 'con']
+data = pandas.read_csv(csvFilePath, engine='c', usecols=colnames, low_memory=False, delimiter = ',', skip_blank_lines = True, index_col = 0, header = 0, float_precision = 10,  dtype={'id': np.int64, 'proper': str, 'dist': np.float64, 'x': np.float64,'y': np.float64, 'z': np.float64, 'spect': str, 'mag': np.float64, 'absmag': np.float64, 'con': str})
 
 print data.dtypes
 
