@@ -230,13 +230,13 @@ function initScene(){
         //console.log(starData.con[l]);
 
 
-        if(starData.con[l] === "CMa" || starData.proper[l] === "Sol"/* || starData.proper[l] === "Rigil Kentaurus" || starData.proper[l] === "Hadar"*/){
+        if(starData.mag[l] < 4 || starData.con[l] === "CMa" || starData.proper[l] === "Sol"/* || starData.proper[l] === "Rigil Kentaurus" || starData.proper[l] === "Hadar"*/){
             //console.log('Found cma star');
             //doInsertPoint = false;
 
 
             //console.log('Found',starData.proper[l]);
-            targetPointCloudGeometry = pointCloudGeometries[7];
+            //targetPointCloudGeometry = pointCloudGeometries[7];
 
             if(starData.proper[l] !== null){
 
@@ -257,7 +257,7 @@ function initScene(){
 
 
 
-        }else{
+        }//else{
 
             //doInsertPoint = false;
 
@@ -288,7 +288,7 @@ function initScene(){
             }else{
                 targetPointCloudGeometry = pointCloudGeometries[2];
             }
-        }
+        //}
 
 
 
