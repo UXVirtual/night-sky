@@ -93,3 +93,7 @@ full list of the updated column names, see the official database documentation o
 *   http://www.html5rocks.com/en/tutorials/casestudies/100000stars/
 
 *   http://stars.chromeexperiments.com/
+
+## Reference
+
+*   [What Are Celestial Coordinates](http://www.skyandtelescope.com/astronomy-resources/what-are-celestial-coordinates/)

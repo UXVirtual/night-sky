@@ -63,13 +63,16 @@ function initScene(){
 
     var debugOn = true;
     var starCount = 10000;
-    var normalizeRadius = 20;
+    var normalizeRadius = 200;
     var pointCloudCount = 8;
     var distanceScale = 1; //keep this at 1 now that we are normalizing star distance
     var starMagnitudes = 8; //number of visible star magnitude buckets
+    var starMagnitudeScaleFactor = 20;
 
 // Create a three.js scene.
     var scene = new THREE.Scene();
+
+    var raycaster = new THREE.Raycaster();
 
 // Create a three.js camera.
     var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
@@ -128,6 +131,19 @@ function initScene(){
 // Position cube mesh
     cube.position.z = -5;
 
+    var geometrySphere = new THREE.SphereGeometry(normalizeRadius);
+
+    var material = new THREE.MeshBasicMaterial({
+        color: 0xffba00,
+        side: THREE.BackSide,
+        wireframe: debugOn
+    });
+
+    var sphere = new THREE.Mesh(geometrySphere,material);
+    sphere.name = "Sky Sphere";
+    scene.add(sphere);
+    sphere.position.set(0,0,0)
+
 
 // Add cube mesh to your three.js scene
 //scene.add(cube);
@@ -149,6 +165,8 @@ function initScene(){
         }
     }
 
+    console.log('Children: ',scene.children);
+
     for(var l = 0; l < starData.count; l++){
 
         x = starData.x[l]*distanceScale;
@@ -160,8 +178,49 @@ function initScene(){
         y = y * normalizeRadius/starData.dist[l];
         z = z * normalizeRadius/starData.dist[l];
 
+        //var lat = starData.dec[l];
+        //var lon = starData.ra[l];
+
+        //var phi   = (90-lat)*(Math.PI/180); //declination
+        //var theta = (lon+180)*(Math.PI/180); //RA
+
+        var phi = starData.dec[l];
+        var theta = starData.ra[l];
+
+
+        //var P = (x - camera.position.x, y - camera.position.y, z - camera.position.z)
+        //var P2 = sqrt(x'^2 + y'^2 + z'^2)
+
+        //x=camera.position.x+normalizeRadius*Math.cos(camera.rotation.y)*Math.cos(camera.rotation.x)
+        //y=camera.position.y+normalizeRadius*Math.sin(camera.rotation.x)
+        //z=camera.position.z+normalizeRadius*Math.sin(camera.rotation.y)*Math.cos(camera.rotation.x)
+
+        //x = -((normalizeRadius) * Math.sin(phi)*Math.cos(theta));
+        //z = ((normalizeRadius) * Math.sin(phi)*Math.sin(theta));
+        //y = ((normalizeRadius) * Math.cos(phi));
+
         //assign points to geometries with specific colors - use first letter of spect value to define color
 
+        var point3D = new THREE.Vector3( starData.x[l] , starData.y[l], starData.z[l] );
+        // update the picking ray with the camera and mouse position
+        raycaster.setFromCamera( point3D, camera );
+
+        // calculate objects intersecting the picking ray
+        var intersects = raycaster.intersectObjects( [sphere] );
+
+        //console.log('Intersects: ',intersects);
+
+        /*for ( var i = 0; i < intersects.length; i++ ) {
+
+            //console.log('Got intersection: ',intersects[ i ]);
+            //intersects[ i ].object.material.color.set( 0xff0000 );
+
+            x = intersects[ i ].point.x;
+            y = intersects[ i ].point.y;
+            z = intersects[ i ].point.z;
+            //break;
+
+        }*/
 
         var targetPointCloudGeometry;
         var doInsertPoint = true;
@@ -171,7 +230,7 @@ function initScene(){
         //console.log(starData.con[l]);
 
 
-        if(starData.con[l] === "CMa" || starData.proper[l] === "Sol" || starData.proper[l] === "Rigil Kentaurus" || starData.proper[l] === "Hadar"){
+        if(starData.con[l] === "CMa" || starData.proper[l] === "Sol"/* || starData.proper[l] === "Rigil Kentaurus" || starData.proper[l] === "Hadar"*/){
             //console.log('Found cma star');
             //doInsertPoint = false;
 
@@ -187,13 +246,11 @@ function initScene(){
 
                 sprite.lookAt(camera.position);
 
-                sprite.translateZ( -200 );
-
-                //var distance = sprite.position.distanceTo(camera.position);
+                var distance = sprite.position.distanceTo(camera.position);
 
                 //console.log('Distance from camera: ',distance);
 
-                //sprite.translateZ( (distance*-1)-50 );
+                sprite.translateZ( (distance*-1)-50 );
 
                 //console.log(starData.proper[l],starData.spect[l]);
             }
@@ -267,7 +324,7 @@ function initScene(){
             targetSize = 0;
         } else if (starData.mag[l] >= 0 && starData.mag[l] < 1) {
             targetSize = 1;
-            //doInsertPoint = false;
+            doInsertPoint = false;
         } else if (starData.mag[l] >= 1 && starData.mag[l] < 2) {
             targetSize = 2;
             doInsertPoint = false;
@@ -313,13 +370,13 @@ function initScene(){
         }else if(starData.dist[l] > 35.5745 && starData.dist[l] <= 54.5256){
             //doInsertPoint = false;
         }else if(starData.dist[l] > 54.5256 && starData.dist[l] <= 71.1238){
-            doInsertPoint = false;
+            //doInsertPoint = false;
         }else if(starData.dist[l] > 71.1238 && starData.dist[l] <= 86.6551){
-            doInsertPoint = false;
+            //doInsertPoint = false;
         }else if(starData.dist[l] > 86.6551 && starData.dist[l] <= 101.0101){
-            doInsertPoint = false;
+            //doInsertPoint = false;
         }else if(starData.dist[l] > 101.0101){
-            doInsertPoint = false;
+            //doInsertPoint = false;
         }
 
         //console.log(targetPointCloudGeometry);
@@ -370,7 +427,7 @@ function initScene(){
         for(var m = 0; m < starMagnitudes; m++){
             var material = new THREE.PointsMaterial({
                 color: color,
-                size: (starMagnitudes-m+1)/80
+                size: (starMagnitudes-m+1)/starMagnitudeScaleFactor
                 //wireframe property not supported on PointsMaterial
             });
 
@@ -444,7 +501,9 @@ function loadStarData(){
             mag: new Float64Array(n),
             count: n,
             absmag: new Float64Array(n),
-            con: new Array(n)
+            con: new Array(n),
+            ra: new Float64Array(n),
+            dec: new Float64Array(n)
         };
 
         //populated typed arrays with star data
@@ -460,6 +519,8 @@ function loadStarData(){
             starData.mag[i] = data[i].mag;
             starData.absmag[i] = data[i].absmag;
             starData.con[i] = data[i].con;
+            starData.ra[i] = data[i].ra;
+            starData.dec[i] = data[i].dec;
             i++;
         }
 
