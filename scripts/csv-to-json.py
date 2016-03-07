@@ -28,8 +28,8 @@ jsonfile = open(jsonFilePath, 'w')
 
 #pandas.set_option('display.precision', 15)
 
-colnames = ['id', 'proper', 'mag', 'absmag', 'dist', 'x', 'y', 'z', 'spect', 'con', 'ra', 'dec']
-data = pandas.read_csv(csvFilePath, engine='c', usecols=colnames, low_memory=False, delimiter = ',', skip_blank_lines = True, index_col = 0, header = 0, float_precision = 10,  dtype={'id': np.int64, 'proper': str, 'dist': np.float64, 'x': np.float64,'y': np.float64, 'z': np.float64, 'spect': str, 'mag': np.float64, 'absmag': np.float64, 'con': str, 'ra': np.float64, 'dec': np.float64})
+colnames = ['id', 'proper', 'mag', 'absmag', 'dist', 'x', 'y', 'z', 'spect', 'con', 'bf', 'gl']
+data = pandas.read_csv(csvFilePath, engine='c', usecols=colnames, low_memory=False, delimiter = ',', skip_blank_lines = True, index_col = 0, header = 0, float_precision = 10,  dtype={'id': np.int64, 'proper': str, 'dist': np.float64, 'x': np.float64,'y': np.float64, 'z': np.float64, 'spect': str, 'mag': np.float64, 'absmag': np.float64, 'con': str, 'bf': str, 'gl': str})
 
 print data.dtypes
 

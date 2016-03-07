@@ -61,7 +61,7 @@ function initScene(){
 // Append the canvas element created by the renderer to document body element.
     document.body.appendChild(renderer.domElement);
 
-    var debugOn = false;
+    var debugOn = true;
     var starCount = 10000;
     var normalizeRadius = 500;
     var pointCloudCount = 8;
@@ -189,11 +189,11 @@ function initScene(){
 
             var targetPointCloudGeometry;
             var doInsertPoint = true;
+            var doInsertSprite = false;
 
 
 
-
-            if(starData.mag[l] < 5 || starData.con[l] === "CMa" || starData.proper[l] === "Sol"/* || starData.proper[l] === "Rigil Kentaurus" || starData.proper[l] === "Hadar"*/){
+            if(starData.proper[l] !== null && starData.mag[l] < 16 || (starData.proper[l] === "Sol" || starData.mag[l] < 3)/* || starData.proper[l] === "Rigil Kentaurus" || starData.proper[l] === "Hadar"*/){
 
                 //doInsertPoint = false;
 
@@ -201,38 +201,38 @@ function initScene(){
                 //console.log('Found',starData.proper[l]);
                 //targetPointCloudGeometry = pointCloudGeometries[7];
 
-                if(starData.proper[l] !== null){
+                if(starData.proper[l] !== null || starData.bf[l] !== null || starData.gl[l] !== null){
 
                     if(debugOn){
-                        var sprite = new SpriteText2D(starData.proper[l], { align: new THREE.Vector2(0, 0),  font: '10px Arial', fillStyle: '#ffffff' , antialias: false })
-                        sprite.position.set(x,y,z);
-                        scene.add(sprite);
 
-                        sprite.lookAt(camera.position);
-                        sprite.scale.set(1,1,1);
-                        //var distance = sprite.position.distanceTo(camera.position);
+                        var starLabel = (starData.proper[l] !== null) ? starData.proper[l] : (starData.bf[l] !== null) ? starData.bf[l] : (starData.gl[l] !== null) ? starData.gl[l] : null;
 
-                        //console.log('Distance from camera: ',distance);
+                        if(starLabel !== null){
+                            var sprite = new SpriteText2D(starLabel, { align: new THREE.Vector2(0, 0),  font: '10px Arial', fillStyle: '#ffffff' , antialias: false })
+                            sprite.position.set(x,y,z);
+                            scene.add(sprite);
 
-                        //sprite.translateZ( -200 );
+                            sprite.lookAt(camera.position);
+                            sprite.scale.set(1,1,1);
+                            //var distance = sprite.position.distanceTo(camera.position);
 
-                        //console.log(starData.proper[l],starData.spect[l]);
+                            //console.log('Distance from camera: ',distance);
+
+                            //sprite.translateZ( -200 );
+
+                            //console.log(starData.proper[l],starData.spect[l]);
+                        }
+
+
                     }
-
-
-
-                    var material = new THREE.SpriteMaterial( { map: texture, color: 0xffffff, fog: false, depthTest: true/*(starMagnitudes-starData.mag[l]+1)*/ } );
-
-                    //console.log(material);
-
-                    var sprite = new THREE.Sprite( material );
-                    sprite.position.set(x,y,z);
-                    scene.add( sprite );
-                    sprite.lookAt(camera.position);
-                    sprite.scale.set(50,50,50);
-                    //sprite.translateZ( -1 );
-
                 }
+
+                doInsertSprite = true;
+
+
+
+
+
 
 
 
@@ -325,6 +325,19 @@ function initScene(){
 
             if(doInsertPoint && typeof targetPointCloudGeometry !== 'undefined' &&  typeof targetPointCloudGeometry[targetSize] !== 'undefined'){
                 targetPointCloudGeometry[targetSize].vertices.push(new THREE.Vector3(x,y,z));
+            }
+
+            if(doInsertSprite && doInsertPoint){
+                var material = new THREE.SpriteMaterial( { map: texture, color: 0xffffff, fog: false, depthTest: true/*(starMagnitudes-starData.mag[l]+1)*/ } );
+
+                //console.log(material);
+
+                var sprite = new THREE.Sprite( material );
+                sprite.position.set(x,y,z);
+                scene.add( sprite );
+                sprite.lookAt(camera.position);
+                sprite.scale.set(50,50,50);
+                //sprite.translateZ( -1 );
             }
 
 
@@ -443,8 +456,8 @@ function loadStarData(){
             count: n,
             absmag: new Float64Array(n),
             con: new Array(n),
-            ra: new Float64Array(n),
-            dec: new Float64Array(n)
+            bf: new Array(n),
+            gl: new Array(n)
         };
 
         //populated typed arrays with star data
@@ -460,8 +473,9 @@ function loadStarData(){
             starData.mag[i] = data[i].mag;
             starData.absmag[i] = data[i].absmag;
             starData.con[i] = data[i].con;
-            starData.ra[i] = data[i].ra;
-            starData.dec[i] = data[i].dec;
+            starData.bf[i] = data[i].bf;
+            starData.gl[i] = data[i].gl;
+
             i++;
         }
 
