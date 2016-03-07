@@ -61,13 +61,13 @@ function initScene(){
 // Append the canvas element created by the renderer to document body element.
     document.body.appendChild(renderer.domElement);
 
-    var debugOn = true;
+    var debugOn = false;
     var starCount = 10000;
-    var normalizeRadius = 200;
+    var normalizeRadius = 500;
     var pointCloudCount = 8;
     var distanceScale = 1; //keep this at 1 now that we are normalizing star distance
     var starMagnitudes = 8; //number of visible star magnitude buckets
-    var starMagnitudeScaleFactor = 20;
+    var starMagnitudeScaleFactor = 4; //higher number = smaller stars
 
 // Create a three.js scene.
     var scene = new THREE.Scene();
@@ -75,7 +75,7 @@ function initScene(){
     var raycaster = new THREE.Raycaster();
 
 // Create a three.js camera.
-    var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+    var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
 
 // Apply VR headset positional data to camera.
     var controls = new THREE.VRControls(camera);
@@ -89,9 +89,11 @@ function initScene(){
 // Add a repeating grid as a skybox.
     var boxWidth = 100;
     var loader = new THREE.TextureLoader();
-    loader.load('assets/img/box.png', onTextureLoaded);
+    //loader.load('assets/img/box.png', onTextureLoaded);
 
-    function onTextureLoaded(texture) {
+    loader.load('assets/img/star_preview.png', onStarTextureLoaded);
+
+    /*function onTextureLoaded(texture) {
         texture.wrapS = THREE.RepeatWrapping;
         texture.wrapT = THREE.RepeatWrapping;
         texture.repeat.set(boxWidth/20, boxWidth/20);
@@ -107,7 +109,11 @@ function initScene(){
         var skybox = new THREE.Mesh(geometry, material);
         skybox.position.set(0,0,0)
         scene.add(skybox);
+    }*/
+    function onStarTextureLoaded(texture){
+        initStars(texture);
     }
+
 
     function centerObject(obj){
         var box = new THREE.Box3().setFromObject( obj );
@@ -124,143 +130,118 @@ function initScene(){
     var manager = new WebVRManager(renderer, effect, params);
 
 // Create 3D objects.
-    var geometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
-    var material = new THREE.MeshNormalMaterial();
-    var cube = new THREE.Mesh(geometry, material);
+    //var geometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+    //var material = new THREE.MeshNormalMaterial();
+    //var cube = new THREE.Mesh(geometry, material);
 
 // Position cube mesh
-    cube.position.z = -5;
+    //cube.position.z = -5;
 
-    var geometrySphere = new THREE.SphereGeometry(normalizeRadius);
+    if(debugOn){
+        var geometrySphere = new THREE.SphereGeometry(normalizeRadius);
 
-    var material = new THREE.MeshBasicMaterial({
-        color: 0xffba00,
-        side: THREE.BackSide,
-        wireframe: debugOn
-    });
+        var material = new THREE.MeshBasicMaterial({
+            color: 0xffba00,
+            side: THREE.BackSide,
+            wireframe: true
+        });
 
-    var sphere = new THREE.Mesh(geometrySphere,material);
-    sphere.name = "Sky Sphere";
-    scene.add(sphere);
-    sphere.position.set(0,0,0)
+        var sphere = new THREE.Mesh(geometrySphere,material);
+        sphere.name = "Sky Sphere";
+        scene.add(sphere);
+        sphere.position.set(0,0,0);
+    }
+
+
 
 
 // Add cube mesh to your three.js scene
 //scene.add(cube);
 
-    function getRandomArbitrary(min, max) {
-        return Math.random() * (max - min) + min;
-    }
+    function initStars(texture){
+        var x, y, z;
 
-    var x, y, z;
+        //generate point cloud geometry
 
-    //generate point cloud geometry
+        var pointCloudGeometries = new Array(pointCloudCount);
 
-    var pointCloudGeometries = new Array(pointCloudCount);
-
-    for(var k = 0; k < pointCloudCount; k++){
-        pointCloudGeometries[k] = new Array(starMagnitudes);
-        for(var a = 0; a < starMagnitudes; a++){
-            pointCloudGeometries[k][a] = new THREE.Geometry();
-        }
-    }
-
-    console.log('Children: ',scene.children);
-
-    for(var l = 0; l < starData.count; l++){
-
-        x = starData.x[l]*distanceScale;
-        y = starData.y[l]*distanceScale;
-        z = starData.z[l]*distanceScale;
-
-        //normalize distance of stars, but keep apparent position in sky - we'll use the mag value to determine size later
-        x = x * normalizeRadius/starData.dist[l];
-        y = y * normalizeRadius/starData.dist[l];
-        z = z * normalizeRadius/starData.dist[l];
-
-        //var lat = starData.dec[l];
-        //var lon = starData.ra[l];
-
-        //var phi   = (90-lat)*(Math.PI/180); //declination
-        //var theta = (lon+180)*(Math.PI/180); //RA
-
-        var phi = starData.dec[l];
-        var theta = starData.ra[l];
-
-
-        //var P = (x - camera.position.x, y - camera.position.y, z - camera.position.z)
-        //var P2 = sqrt(x'^2 + y'^2 + z'^2)
-
-        //x=camera.position.x+normalizeRadius*Math.cos(camera.rotation.y)*Math.cos(camera.rotation.x)
-        //y=camera.position.y+normalizeRadius*Math.sin(camera.rotation.x)
-        //z=camera.position.z+normalizeRadius*Math.sin(camera.rotation.y)*Math.cos(camera.rotation.x)
-
-        //x = -((normalizeRadius) * Math.sin(phi)*Math.cos(theta));
-        //z = ((normalizeRadius) * Math.sin(phi)*Math.sin(theta));
-        //y = ((normalizeRadius) * Math.cos(phi));
-
-        //assign points to geometries with specific colors - use first letter of spect value to define color
-
-        var point3D = new THREE.Vector3( starData.x[l] , starData.y[l], starData.z[l] );
-        // update the picking ray with the camera and mouse position
-        raycaster.setFromCamera( point3D, camera );
-
-        // calculate objects intersecting the picking ray
-        var intersects = raycaster.intersectObjects( [sphere] );
-
-        //console.log('Intersects: ',intersects);
-
-        /*for ( var i = 0; i < intersects.length; i++ ) {
-
-            //console.log('Got intersection: ',intersects[ i ]);
-            //intersects[ i ].object.material.color.set( 0xff0000 );
-
-            x = intersects[ i ].point.x;
-            y = intersects[ i ].point.y;
-            z = intersects[ i ].point.z;
-            //break;
-
-        }*/
-
-        var targetPointCloudGeometry;
-        var doInsertPoint = true;
-
-        //determine which color bucket the star should go into
-
-        //console.log(starData.con[l]);
-
-
-        if(starData.mag[l] < 4 || starData.con[l] === "CMa" || starData.proper[l] === "Sol"/* || starData.proper[l] === "Rigil Kentaurus" || starData.proper[l] === "Hadar"*/){
-            //console.log('Found cma star');
-            //doInsertPoint = false;
-
-
-            //console.log('Found',starData.proper[l]);
-            //targetPointCloudGeometry = pointCloudGeometries[7];
-
-            if(starData.proper[l] !== null){
-
-                var sprite = new SpriteText2D(starData.proper[l], { align: new THREE.Vector2(0, 0),  font: '10px Arial', fillStyle: '#ffffff' , antialias: false })
-                sprite.position.set(x,y,z);
-                scene.add(sprite);
-
-                sprite.lookAt(camera.position);
-
-                var distance = sprite.position.distanceTo(camera.position);
-
-                //console.log('Distance from camera: ',distance);
-
-                sprite.translateZ( (distance*-1)-50 );
-
-                //console.log(starData.proper[l],starData.spect[l]);
+        for(var k = 0; k < pointCloudCount; k++){
+            pointCloudGeometries[k] = new Array(starMagnitudes);
+            for(var a = 0; a < starMagnitudes; a++){
+                pointCloudGeometries[k][a] = new THREE.Geometry();
             }
+        }
+
+        //console.log('Children: ',scene.children);
+
+        for(var l = 0; l < starData.count; l++){
+
+            x = starData.x[l]*distanceScale;
+            y = starData.y[l]*distanceScale;
+            z = starData.z[l]*distanceScale;
+
+            //normalize distance of stars, but keep apparent position in sky - we'll use the mag value to determine size later
+            x = x * normalizeRadius/starData.dist[l];
+            y = y * normalizeRadius/starData.dist[l];
+            z = z * normalizeRadius/starData.dist[l];
 
 
 
-        }//else{
+            var targetPointCloudGeometry;
+            var doInsertPoint = true;
+
+
+
+
+            if(starData.mag[l] < 5 || starData.con[l] === "CMa" || starData.proper[l] === "Sol"/* || starData.proper[l] === "Rigil Kentaurus" || starData.proper[l] === "Hadar"*/){
+
+                //doInsertPoint = false;
+
+
+                //console.log('Found',starData.proper[l]);
+                //targetPointCloudGeometry = pointCloudGeometries[7];
+
+                if(starData.proper[l] !== null){
+
+                    if(debugOn){
+                        var sprite = new SpriteText2D(starData.proper[l], { align: new THREE.Vector2(0, 0),  font: '10px Arial', fillStyle: '#ffffff' , antialias: false })
+                        sprite.position.set(x,y,z);
+                        scene.add(sprite);
+
+                        sprite.lookAt(camera.position);
+                        sprite.scale.set(1,1,1);
+                        //var distance = sprite.position.distanceTo(camera.position);
+
+                        //console.log('Distance from camera: ',distance);
+
+                        //sprite.translateZ( -200 );
+
+                        //console.log(starData.proper[l],starData.spect[l]);
+                    }
+
+
+
+                    var material = new THREE.SpriteMaterial( { map: texture, color: 0xffffff, fog: false, depthTest: true/*(starMagnitudes-starData.mag[l]+1)*/ } );
+
+                    //console.log(material);
+
+                    var sprite = new THREE.Sprite( material );
+                    sprite.position.set(x,y,z);
+                    scene.add( sprite );
+                    sprite.lookAt(camera.position);
+                    sprite.scale.set(50,50,50);
+                    //sprite.translateZ( -1 );
+
+                }
+
+
+
+            }//else{
 
             //doInsertPoint = false;
 
+            //assign points to geometries with specific colors - use first letter of spect value to define color
+            //determine which color bucket the star should go into
             if(starData.spect[l] !== null){
                 switch(starData.spect[l].charAt(0)){
                     case "O":
@@ -288,168 +269,128 @@ function initScene(){
             }else{
                 targetPointCloudGeometry = pointCloudGeometries[2];
             }
-        //}
+            //}
 
 
 
 
-        //determine which size bucket the star should go into
+            //determine which size bucket the star should go into
 
-        var targetSize;
+            var targetSize;
 
-        /*if(starData.absmag[l] >= 15){
-            targetSize = 0;
-        }else if(starData.absmag[l] >= 10 && starData.absmag[l] < 15){
-            targetSize = 1;
-        }else if(starData.absmag[l] >= 5 && starData.absmag[l] < 10){
-            targetSize = 2;
-        }else if(starData.absmag[l] >= 0 && starData.absmag[l] < 5){
-            targetSize = 3;
-        }else if(starData.absmag[l] >= -5 && starData.absmag[l] < 0){
-            targetSize = 4;
-        }else if(starData.absmag[l] >= -10 && starData.absmag[l] < -5){
-            targetSize = 5;
-        }else if(starData.absmag[l] >= -15 && starData.absmag[l] < -10){
-            targetSize = 6;
-        }else if(starData.absmag[l] >= -20 && starData.absmag[l] < -15){
-            targetSize = 7;
-        }else{
-            targetSize = 7;
-        }
-
-        targetSize = 0;*/
-
-        //targetSize = 0;
-        if (starData.mag[l] < 0) {
-            targetSize = 0;
-        } else if (starData.mag[l] >= 0 && starData.mag[l] < 1) {
-            targetSize = 1;
-            doInsertPoint = false;
-        } else if (starData.mag[l] >= 1 && starData.mag[l] < 2) {
-            targetSize = 2;
-            doInsertPoint = false;
-        } else if (starData.mag[l] >= 2 && starData.mag[l] < 3) {
-            targetSize = 3;
-            doInsertPoint = false;
-        } else if (starData.mag[l] >= 3 && starData.mag[l] < 4) {
-            targetSize = 4;
-            doInsertPoint = false;
-        } else if (starData.mag[l] >= 4 && starData.mag[l] < 5) {
-            targetSize = 5;
-            doInsertPoint = false;
-        } else if (starData.mag[l] >= 5 && starData.mag[l] < 6) {
-            targetSize = 6;
-            doInsertPoint = false;
-        } else if (starData.mag[l] >= 6 && starData.mag[l] < 7) {
-            targetSize = 7;
-            doInsertPoint = false;
-        }
-
-        //targetSize = 0;
+            if (starData.mag[l] < 0) {
+                targetSize = 0;
+                //doInsertPoint = false;
+            } else if (starData.mag[l] >= 0 && starData.mag[l] < 1) {
+                targetSize = 1;
+                //doInsertPoint = false;
+            } else if (starData.mag[l] >= 1 && starData.mag[l] < 2) {
+                targetSize = 2;
+                //doInsertPoint = false;
+            } else if (starData.mag[l] >= 2 && starData.mag[l] < 3) {
+                targetSize = 3;
+                //doInsertPoint = false;
+            } else if (starData.mag[l] >= 3 && starData.mag[l] < 4) {
+                targetSize = 4;
+                //doInsertPoint = false;
+            } else if (starData.mag[l] >= 4 && starData.mag[l] < 5) {
+                targetSize = 5;
+                //doInsertPoint = false;
+            } else if (starData.mag[l] >= 5 && starData.mag[l] < 6) {
+                targetSize = 6;
+                //doInsertPoint = false;
+            } else if (starData.mag[l] >= 6 && starData.mag[l] < 7) {
+                targetSize = 7;
+                //doInsertPoint = false;
+            } else {
+                doInsertPoint = false;
+            }
 
 
+            /*if(starData.dist[l] <= 35.5745){
 
-        if(starData.dist[l] <= 35.5745){
-            //doInsertPoint = false;
+             }else if(starData.dist[l] > 35.5745 && starData.dist[l] <= 54.5256){
+             //doInsertPoint = false;
+             }else if(starData.dist[l] > 54.5256 && starData.dist[l] <= 71.1238){
+             //doInsertPoint = false;
+             }else if(starData.dist[l] > 71.1238 && starData.dist[l] <= 86.6551){
+             //doInsertPoint = false;
+             }else if(starData.dist[l] > 86.6551 && starData.dist[l] <= 101.0101){
+             //doInsertPoint = false;
+             }else if(starData.dist[l] > 101.0101){
+             //doInsertPoint = false;
+             }*/
 
-            /*if(l < 300 && starData.proper[l] !== null){
-                var sprite = new SpriteText2D(starData.proper[l], { align: new THREE.Vector2(0, 0),  font: '10px Arial', fillStyle: '#ffffff' , antialias: false })
-                sprite.position.set(starData.x[l],starData.y[l],starData.z[l]);
-                scene.add(sprite);
+            //console.log(targetPointCloudGeometry);
 
-                sprite.lookAt(camera.position);
-
-                var distance = sprite.position.distanceTo(camera.position);
-
-                console.log(distance);
-
-                sprite.translateZ( (distance*-1) );
-            }*/
+            if(doInsertPoint && typeof targetPointCloudGeometry !== 'undefined' &&  typeof targetPointCloudGeometry[targetSize] !== 'undefined'){
+                targetPointCloudGeometry[targetSize].vertices.push(new THREE.Vector3(x,y,z));
+            }
 
 
-        }else if(starData.dist[l] > 35.5745 && starData.dist[l] <= 54.5256){
-            //doInsertPoint = false;
-        }else if(starData.dist[l] > 54.5256 && starData.dist[l] <= 71.1238){
-            //doInsertPoint = false;
-        }else if(starData.dist[l] > 71.1238 && starData.dist[l] <= 86.6551){
-            //doInsertPoint = false;
-        }else if(starData.dist[l] > 86.6551 && starData.dist[l] <= 101.0101){
-            //doInsertPoint = false;
-        }else if(starData.dist[l] > 101.0101){
-            //doInsertPoint = false;
-        }
 
-        //console.log(targetPointCloudGeometry);
-
-        if(doInsertPoint && typeof targetPointCloudGeometry !== 'undefined' &&  typeof targetPointCloudGeometry[targetSize] !== 'undefined'){
-            targetPointCloudGeometry[targetSize].vertices.push(new THREE.Vector3(x,y,z));
         }
 
 
+        for(var j = 0; j < pointCloudCount; j++){
 
+            var color;
+
+            switch(j){
+                case 0:
+                    color = 0x0000FF;
+                    break;
+                case 1:
+                    color = 0xADD8E6;
+                    break;
+                case 2:
+                    color = 0xFFFFFF;
+                    break;
+                case 3:
+                    color = 0xFFFFE0;
+                    break;
+                case 4:
+                    color = 0xFFFF00;
+                    break;
+                case 5:
+                    color = 0xFFA500;
+                    break;
+                case 6:
+                    color = 0xFF0000;
+                    break;
+                case 7:
+                    color = 0x663399;
+                    break;
+            }
+
+            for(var m = 0; m < starMagnitudes; m++){
+                var material = new THREE.PointsMaterial({
+                    color: color,
+                    size: (starMagnitudes-m+1)/starMagnitudeScaleFactor,
+                    //map: texture, blending: THREE.AdditiveBlending, depthTest: false, transparent : true
+                    depthTest: false, transparent : false
+                    //wireframe property not supported on PointsMaterial
+                });
+
+                var pointCloud = new THREE.Points(pointCloudGeometries[j][m], material);
+
+                centerObject(pointCloud);
+                scene.add(pointCloud);
+            }
+
+
+
+        }
     }
 
 
-    for(var j = 0; j < pointCloudCount; j++){
-
-        var color;
-
-        switch(j){
-            case 0:
-                color = 0x0000FF;
-                break;
-            case 1:
-                color = 0xADD8E6;
-                break;
-            case 2:
-                color = 0xFFFFFF;
-                break;
-            case 3:
-                color = 0xFFFFE0;
-                break;
-            case 4:
-                color = 0xFFFF00;
-                break;
-            case 5:
-                color = 0xFFA500;
-                break;
-            case 6:
-                color = 0xFF0000;
-                break;
-            case 7:
-                color = 0x663399;
-                break;
-        }
-
-        //var value = Math.random() * 0xFF | 0;
-        //var grayscale = (value << 16) | (value << 8) | value;
-
-        for(var m = 0; m < starMagnitudes; m++){
-            var material = new THREE.PointsMaterial({
-                color: color,
-                size: (starMagnitudes-m+1)/starMagnitudeScaleFactor
-                //wireframe property not supported on PointsMaterial
-            });
-
-            var pointCloud = new THREE.Points(pointCloudGeometries[j][m], material);
-
-            centerObject(pointCloud);
-            scene.add(pointCloud);
-        }
 
 
-
-    }
-
-
-// Request animation frame loop function
+    // Request animation frame loop function
     var lastRender = 0;
     function animate(timestamp) {
         //var delta = Math.min(timestamp - lastRender, 500);
         lastRender = timestamp;
-
-        // Apply rotation to cube mesh
-        //cube.rotation.y += delta * 0.0006;
 
         // Update VR headset position and apply to camera.
         controls.update();
@@ -486,7 +427,7 @@ function loadStarData(){
 
     $.getJSON( 'assets/data/data.json.gz', {}, function(data){
 
-        console.log(data);
+        //console.log(data);
 
         //init typed arrays for star data
         var n = data.length;
@@ -526,7 +467,7 @@ function loadStarData(){
 
         console.log('Star data loaded.');
 
-        console.log(data);
+        //console.log(data);
 
         initScene();
     });
