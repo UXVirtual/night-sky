@@ -55,13 +55,14 @@ function initScene(){
 
     // Setup three.js WebGL renderer. Note: Antialiasing is a big performance hit.
 // Only enable it if you actually need to.
-    var renderer = new THREE.WebGLRenderer({antialias: true});
+    var renderer = new THREE.WebGLRenderer({antialias: true, alpha: false}); //performance hits if antialias or alpha used
     renderer.setPixelRatio(window.devicePixelRatio);
+    //renderer.setClearColor( 0x0000FF, 1 );
 
 // Append the canvas element created by the renderer to document body element.
     document.body.appendChild(renderer.domElement);
 
-    var debugOn = true;
+    var debugOn = false;
     var starCount = 10000;
     var normalizeRadius = 500;
     var pointCloudCount = 8;
@@ -75,7 +76,8 @@ function initScene(){
     var raycaster = new THREE.Raycaster();
 
 // Create a three.js camera.
-    var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
+    var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+
 
 // Apply VR headset positional data to camera.
     var controls = new THREE.VRControls(camera);
@@ -91,7 +93,19 @@ function initScene(){
     var loader = new THREE.TextureLoader();
     //loader.load('assets/img/box.png', onTextureLoaded);
 
+    var rotWorldMatrix;
+
+// Rotate an object around an arbitrary axis in world space
+    function rotateAroundWorldAxis(object, axis, radians) {
+        rotWorldMatrix = new THREE.Matrix4();
+        rotWorldMatrix.makeRotationAxis(axis.normalize(), radians);
+        rotWorldMatrix.multiply(object.matrix);        // pre-multiply
+        object.matrix = rotWorldMatrix;
+        object.rotation.setFromRotationMatrix(object.matrix);
+    }
+
     loader.load('assets/img/star_preview.png', onStarTextureLoaded);
+    var starMapTexture = loader.load('assets/img/starmap_4k_print.jpg');
 
     /*function onTextureLoaded(texture) {
         texture.wrapS = THREE.RepeatWrapping;
@@ -113,7 +127,6 @@ function initScene(){
     function onStarTextureLoaded(texture){
         initStars(texture);
     }
-
 
     function centerObject(obj){
         var box = new THREE.Box3().setFromObject( obj );
@@ -137,20 +150,22 @@ function initScene(){
 // Position cube mesh
     //cube.position.z = -5;
 
-    if(debugOn){
+    //if(debugOn){
         var geometrySphere = new THREE.SphereGeometry(normalizeRadius);
 
         var material = new THREE.MeshBasicMaterial({
-            color: 0xffba00,
+            //color: 0xffba00,
             side: THREE.BackSide,
-            wireframe: true
+            wireframe: false,
+            transparent: false,
+            map: starMapTexture
         });
 
         var sphere = new THREE.Mesh(geometrySphere,material);
         sphere.name = "Sky Sphere";
-        scene.add(sphere);
-        sphere.position.set(0,0,0);
-    }
+        //scene.add(sphere);
+        //sphere.position.set(0,0,0);
+   // }
 
 
 
@@ -213,7 +228,10 @@ function initScene(){
                             scene.add(sprite);
 
                             sprite.lookAt(camera.position);
-                            sprite.scale.set(1,1,1);
+                            //sprite.scale.set(1,1,1);
+
+                            //rotateAroundWorldAxis(sprite, new THREE.Vector3(0,0,1), 90 * Math.PI/180);
+
                             //var distance = sprite.position.distanceTo(camera.position);
 
                             //console.log('Distance from camera: ',distance);
@@ -269,6 +287,8 @@ function initScene(){
             }else{
                 targetPointCloudGeometry = pointCloudGeometries[2];
             }
+
+            targetPointCloudGeometry = pointCloudGeometries[2];
             //}
 
 
@@ -301,6 +321,8 @@ function initScene(){
                 //doInsertPoint = false;
             } else if (starData.mag[l] >= 6 && starData.mag[l] < 7) {
                 targetSize = 7;
+                //doInsertPoint = false;
+            } else if (starData.mag[l] >= 7 && starData.mag[l] < 16) {
                 //doInsertPoint = false;
             } else {
                 doInsertPoint = false;
@@ -336,7 +358,12 @@ function initScene(){
                 sprite.position.set(x,y,z);
                 scene.add( sprite );
                 sprite.lookAt(camera.position);
-                sprite.scale.set(50,50,50);
+
+                console.log(starData.mag[l]);
+
+                //sprite.rotation.y = 90 * Math.PI / 180;
+
+                sprite.scale.set((starMagnitudes-starData.mag[l])*10,(starMagnitudes-starData.mag[l])*10,(starMagnitudes-starData.mag[l])*10);
                 //sprite.translateZ( -1 );
             }
 

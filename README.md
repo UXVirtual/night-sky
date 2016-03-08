@@ -97,3 +97,4 @@ full list of the updated column names, see the official database documentation o
 ## Reference
 
 *   [What Are Celestial Coordinates](http://www.skyandtelescope.com/astronomy-resources/what-are-celestial-coordinates/)
+*   [Scientific Visualization Studio](http://svs.gsfc.nasa.gov/cgi-bin/details.cgi?aid=3895)
