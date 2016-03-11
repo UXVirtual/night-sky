@@ -1,4 +1,5 @@
 var webpack = require("webpack");
+var path = require("path");
 
 module.exports = {
     entry: "./assets/src/index.js",
@@ -19,11 +20,19 @@ module.exports = {
             }
         ]
     },
+    resolve: [
+        {
+            root: [path.join(__dirname, "bower_components")]
+        }
+    ],
     plugins: [
         new webpack.ProvidePlugin({
             THREE: "three",
             "window.THREE": "three"
-        })
+        }),
+        new webpack.ResolverPlugin(
+            new webpack.ResolverPlugin.DirectoryDescriptionFilePlugin(".bower.json", ["main"])
+        )
     ]
 };
 

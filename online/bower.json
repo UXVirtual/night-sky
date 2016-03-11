@@ -1,0 +1,21 @@
+{
+  "name": "olympics-vr-prototype",
+  "description": "A prototype of the night sky VR functionality.",
+  "main": "index.js",
+  "authors": [
+    "Michael Andrew (michael.andrew@gladeye.co.nz)"
+  ],
+  "moduleType": [],
+  "homepage": "",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "ocean": "https://github.com/jbouny/ocean.git"
+  }
+}

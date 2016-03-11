@@ -14,6 +14,7 @@ import './vendor/three/examples/js/effects/VREffect'
 import './vendor/charliehoey/GPUParticleSystem'
 
 import './vendor/zz85/SkyShader'
+import '../../bower_components/ocean/water-material.js'
 
 WebVRConfig = {
     /**
@@ -48,11 +49,13 @@ WebVRConfig = {
 };
 
 var sky, sunSphere, scene, renderer, camera;
-
+var lastCameraX, lastCameraY, lastCameraZ;
 var starData;
+var ms_Water;
 
 //console.log(THREE);
 
+//sky shader based on: http://threejs.org/examples/webgl_shaders_sky.html
 function initSky() {
 
     // Add Sky Mesh
@@ -66,19 +69,19 @@ function initSky() {
     );
     sunSphere.position.y = - 700000;
     sunSphere.visible = false;
-    scene.add( sunSphere );
+    //scene.add( sunSphere );
 
     /// GUI
 
     var effectController  = {
-        turbidity: 10,
-        reileigh: 2,
+        turbidity: 2,
+        reileigh: 4,
         mieCoefficient: 0.005,
         mieDirectionalG: 0.8,
         luminance: 1,
         inclination: 0.49, // elevation / inclination
         azimuth: 0.25, // Facing front,
-        sun: ! true
+        sun: false
     };
 
     var distance = 400000;
@@ -122,6 +125,45 @@ function initSky() {
 
 }
 
+function loadSkyBox() {
+    var path = "assets/img/";
+    var format = '.jpg';
+    var urls = [
+        path + 'skybox_0' + format, path + 'skybox_1' + format,
+        path + 'skybox_2' + format, path + 'skybox_3' + format,
+        path + 'skybox_4' + format, path + 'skybox_5' + format
+    ];
+
+    /*
+
+     'px.png', 'nx.png',
+     'py.png', 'ny.png',
+     'pz.png', 'nz.png'
+
+     */
+
+    var cubeMap = THREE.ImageUtils.loadTextureCube(urls);
+    cubeMap.format = THREE.RGBFormat;
+    cubeMap.flipY = false;
+
+    var cubeShader = THREE.ShaderLib['cube'];
+    cubeShader.uniforms['tCube'].value = cubeMap;
+
+    var skyBoxMaterial = new THREE.ShaderMaterial({
+        fragmentShader: cubeShader.fragmentShader,
+        vertexShader: cubeShader.vertexShader,
+        uniforms: cubeShader.uniforms,
+        depthWrite: false,
+        side: THREE.BackSide
+    });
+
+    var skyBox = new THREE.Mesh(
+        new THREE.BoxGeometry(100000, 100000, 100000),
+        skyBoxMaterial
+    );
+    scene.add(skyBox);
+}
+
 function initScene(){
 
     console.log('initializing scene')
@@ -130,30 +172,36 @@ function initScene(){
 // Only enable it if you actually need to.
     renderer = new THREE.WebGLRenderer({antialias: true, alpha: false}); //performance hits if antialias or alpha used
     renderer.setPixelRatio(window.devicePixelRatio);
-    //renderer.setClearColor( 0x0000FF, 1 );
+    //renderer.setClearColor( 0x00a6ec, 1 );
 
 // Append the canvas element created by the renderer to document body element.
     document.body.appendChild(renderer.domElement);
 
     var debugOn = false;
-    var starCount = 10000;
+    //var starCount = 10000;
     var normalizeRadius = 500;
-    var pointCloudCount = 8;
+    var pointCloudCount = 3;
     var distanceScale = 1; //keep this at 1 now that we are normalizing star distance
-    var starMagnitudes = 8; //number of visible star magnitude buckets
+    var starMagnitudes = 6; //number of visible star magnitude buckets
     var starMagnitudeScaleFactor = 4; //higher number = smaller stars
+    var starSpriteSize = 5; //scaling factor of star sprites for near stars that make up major constellations
 
 // Create a three.js scene.
     scene = new THREE.Scene();
 
-    var raycaster = new THREE.Raycaster();
+    //var raycaster = new THREE.Raycaster();
 
 // Create a three.js camera.
     camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2000000);
 
+    //lastCameraX = camera.rotation.x;
+    //lastCameraY = camera.rotation.y;
+    //lastCameraZ = camera.rotation.z;
 
 // Apply VR headset positional data to camera.
     var controls = new THREE.VRControls(camera);
+
+    //camera.addEventListener( 'change', render );
 
 // Apply VR stereo rendering to renderer.
     var effect = new THREE.VREffect(renderer);
@@ -177,7 +225,38 @@ function initScene(){
         object.rotation.setFromRotationMatrix(object.matrix);
     }
 
-    loader.load('assets/img/star_preview.png', onStarTextureLoaded);
+    // Add light
+    var directionalLight = new THREE.DirectionalLight(0xffff55, 1);
+    directionalLight.position.set(-400, 100, -500);
+    scene.add(directionalLight);
+
+    // Load textures
+    var waterNormals = new THREE.ImageUtils.loadTexture('assets/img/waternormals.jpg');
+    waterNormals.wrapS = waterNormals.wrapT = THREE.RepeatWrapping;
+
+    // Create the water effect
+    ms_Water = new THREE.Water(renderer, camera, scene, {
+        textureWidth: 256,
+        textureHeight: 256,
+        waterNormals: waterNormals,
+        alpha: 	1.0,
+        sunDirection: directionalLight.position.normalize(),
+        sunColor: 0xffffff,
+        waterColor: 0x001e0f,
+        betaVersion: 0
+    });
+    var aMeshMirror = new THREE.Mesh(
+        new THREE.PlaneBufferGeometry(1500, 1500, 10, 10),
+        ms_Water.material
+    );
+    aMeshMirror.add(ms_Water);
+    aMeshMirror.rotation.x = - Math.PI * 0.5;
+
+    scene.add(aMeshMirror);
+
+
+
+    loader.load('assets/img/star_preview3.png', onStarTextureLoaded);
     //var starMapTexture = loader.load('assets/img/starmap_4k_print.jpg');
 
     /*function onTextureLoaded(texture) {
@@ -215,13 +294,6 @@ function initScene(){
     };
     var manager = new WebVRManager(renderer, effect, params);
 
-// Create 3D objects.
-    //var geometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
-    //var material = new THREE.MeshNormalMaterial();
-    //var cube = new THREE.Mesh(geometry, material);
-
-// Position cube mesh
-    //cube.position.z = -5;
 
     //if(debugOn){
 
@@ -229,82 +301,6 @@ function initScene(){
 
     console.log('Collada: ',THREE.ColladaLoader)
 
-    //var loader2 = new THREE.ColladaLoader();
-
-    //loader2.options.convertUpAxis = true;
-
-    /*loader2.load(
-        // resource URL
-        'assets/img/skybox.dae',
-        // Function when resource is loaded
-        function ( collada ) {
-
-            var model = collada.scene.getObjectByName( "Cube" );
-
-            console.log('Children',model.children[0]);
-
-            var model_geometry = model.children[0].geometry;
-            var model_material = model.children[0].material;
-
-            console.log('Children material',model_material);
-
-            model_material.side = THREE.BackSide;
-            model_material.wireframe = true;
-            model_material.color = 0xffba00;
-
-            model.scale.set(200, 200, 200);
-            model.position.set(0,0,0);
-            model.updateMatrix();
-
-            scene.add( model );
-
-            console.log('Added skybox to scene');
-        },
-        // Function called when download progresses
-        function ( xhr ) {
-            console.log( (xhr.loaded / xhr.total * 100) + '% loaded' );
-        }
-    );*/
-
-    /*var urlPrefix = "assets/img/skybox/";
-    var urls = [ urlPrefix + "posx.jpg", urlPrefix + "negx.jpg",
-        urlPrefix + "posy.jpg", urlPrefix + "negy.jpg",
-        urlPrefix + "posz.jpg", urlPrefix + "negz.jpg" ];
-    var textureCube = THREE.ImageUtils.loadTextureCube( urls );
-
-    var shader = THREE.ShaderLib["cube"];
-    var uniforms = THREE.UniformsUtils.clone( shader.uniforms );
-    uniforms['tCube'].texture= textureCube;   // textureCube has been init before
-    var material = new THREE.ShaderMaterial({
-        fragmentShader    : shader.fragmentShader,
-        vertexShader  : shader.vertexShader,
-        uniforms  : uniforms
-    });*/
-
-
-
-
-        /*var geometrySphere = new THREE.SphereGeometry(normalizeRadius);
-
-        var material = new THREE.MeshBasicMaterial({
-            //color: 0xffba00,
-            side: THREE.BackSide,
-            wireframe: false,
-            transparent: false,
-            map: starMapTexture
-        });
-
-        var sphere = new THREE.Mesh(geometrySphere,material);
-        sphere.name = "Sky Sphere";*/
-        //scene.add(sphere);
-        //sphere.position.set(0,0,0);
-   // }
-
-
-
-
-// Add cube mesh to your three.js scene
-//scene.add(cube);
 
     function initStars(texture){
         var x, y, z;
@@ -361,17 +357,7 @@ function initScene(){
                             scene.add(sprite);
 
                             sprite.lookAt(camera.position);
-                            //sprite.scale.set(1,1,1);
 
-                            //rotateAroundWorldAxis(sprite, new THREE.Vector3(0,0,1), 90 * Math.PI/180);
-
-                            //var distance = sprite.position.distanceTo(camera.position);
-
-                            //console.log('Distance from camera: ',distance);
-
-                            //sprite.translateZ( -200 );
-
-                            //console.log(starData.proper[l],starData.spect[l]);
                         }
 
 
@@ -451,10 +437,10 @@ function initScene(){
                 //doInsertPoint = false;
             } else if (starData.mag[l] >= 5 && starData.mag[l] < 6) {
                 targetSize = 6;
-                //doInsertPoint = false;
+                doInsertPoint = false;
             } else if (starData.mag[l] >= 6 && starData.mag[l] < 7) {
                 targetSize = 7;
-                //doInsertPoint = false;
+                doInsertPoint = false;
             } else if (starData.mag[l] >= 7 && starData.mag[l] < 16) {
                 doInsertPoint = false;
             } else {
@@ -496,7 +482,7 @@ function initScene(){
 
                 //sprite.rotation.y = 90 * Math.PI / 180;
 
-                sprite.scale.set((starMagnitudes-starData.mag[l])*10,(starMagnitudes-starData.mag[l])*10,(starMagnitudes-starData.mag[l])*10);
+                sprite.scale.set((starMagnitudes-starData.mag[l])*starSpriteSize,(starMagnitudes-starData.mag[l])*starSpriteSize,(starMagnitudes-starData.mag[l])*starSpriteSize);
                 //sprite.translateZ( -1 );
             }
 
@@ -556,32 +542,58 @@ function initScene(){
         }
     }
 
+    //window.addEventListener( 'resize', onWindowResize, false );
 
 
+    function onWindowResize() {
+
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+
+        renderer.setSize( window.innerWidth, window.innerHeight );
+
+        render();
+
+    }
 
     // Request animation frame loop function
     var lastRender = 0;
-    function animate(timestamp) {
+    function animate(timestamp,skipRenderCheck) {
         //var delta = Math.min(timestamp - lastRender, 500);
         lastRender = timestamp;
 
         // Update VR headset position and apply to camera.
         controls.update();
 
-        // Render the scene through the manager.
-        manager.render(scene, camera, timestamp);
+        ms_Water.material.uniforms.time.value += 1.0 / 60.0;
+
+        ms_Water.render();
+
+        //if((typeof skipRenderCheck !== 'undefined' && skipRenderCheck) && (camera.rotation.x !== lastCameraX || camera.rotation.y !== lastCameraY || camera.rotation.z !== lastCameraZ)){
+            // Render the scene through the manager.
+            //manager.render(scene, camera, timestamp);
+        //renderer.render(scene, camera);
+            render(timestamp);
+
+
+        //}
 
         requestAnimationFrame(animate);
+
+
     }
 
-    function render() {
+    function render(timestamp) {
 
-        renderer.render(scene, camera);
+        //console.log('Rendering...');
+
+        manager.render(scene, camera, timestamp);
 
     }
 
 // Kick off animation loop
-    animate(performance ? performance.now() : Date.now());
+    onWindowResize();
+    animate(performance ? performance.now() : Date.now(),true);
 
 // Reset the position sensor when 'z' pressed.
     function onKey(event) {
@@ -647,7 +659,9 @@ function loadStarData(){
 
         initScene();
 
-        initSky();
+        //initSky();
+
+        loadSkyBox();
     });
 }
 

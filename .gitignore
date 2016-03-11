@@ -3,3 +3,4 @@ node_modules
 scripts/CSVToJSON.egg-info
 scripts/dist
 online/assets/js/data.json
+online/bower_components
