@@ -136,6 +136,12 @@ function loadSkyBox() {
 
     /*
 
+        ['left','right','up','down','backward','forward']
+
+     */
+
+    /*
+
      'px.png', 'nx.png',
      'py.png', 'ny.png',
      'pz.png', 'nz.png'
