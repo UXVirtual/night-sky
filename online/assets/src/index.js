@@ -13,6 +13,8 @@ import './vendor/three/examples/js/effects/VREffect'
 
 import './vendor/charliehoey/GPUParticleSystem'
 
+import './vendor/zz85/SkyShader'
+
 WebVRConfig = {
     /**
      * webvr-polyfill configuration
@@ -21,9 +23,9 @@ WebVRConfig = {
     // Forces availability of VR mode.
     FORCE_ENABLE_VR: false, // Default: false.
     // Complementary filter coefficient. 0 for accelerometer, 1 for gyro.
-    K_FILTER: 0.98, // Default: 0.98.
+    K_FILTER: 1, // Default: 0.98.
     // How far into the future to predict during fast motion.
-    PREDICTION_TIME_S: 0.040, // Default: 0.040 (in seconds).
+    PREDICTION_TIME_S: 1, // Default: 0.040 (in seconds).
     // Flag to disable touch panner. In case you have your own touch controls
     TOUCH_PANNER_DISABLED: false, // Default: false.
     // Enable yaw panning only, disabling roll and pitch. This can be useful for
@@ -45,9 +47,80 @@ WebVRConfig = {
     NO_DPDB_FETCH: true  // Default: false.
 };
 
+var sky, sunSphere, scene, renderer, camera;
+
 var starData;
 
 //console.log(THREE);
+
+function initSky() {
+
+    // Add Sky Mesh
+    sky = new THREE.Sky();
+    scene.add( sky.mesh );
+
+    // Add Sun Helper
+    sunSphere = new THREE.Mesh(
+        new THREE.SphereBufferGeometry( 20000, 16, 8 ),
+        new THREE.MeshBasicMaterial( { color: 0xffffff } )
+    );
+    sunSphere.position.y = - 700000;
+    sunSphere.visible = false;
+    scene.add( sunSphere );
+
+    /// GUI
+
+    var effectController  = {
+        turbidity: 10,
+        reileigh: 2,
+        mieCoefficient: 0.005,
+        mieDirectionalG: 0.8,
+        luminance: 1,
+        inclination: 0.49, // elevation / inclination
+        azimuth: 0.25, // Facing front,
+        sun: ! true
+    };
+
+    var distance = 400000;
+
+    function guiChanged() {
+
+        var uniforms = sky.uniforms;
+        uniforms.turbidity.value = effectController.turbidity;
+        uniforms.reileigh.value = effectController.reileigh;
+        uniforms.luminance.value = effectController.luminance;
+        uniforms.mieCoefficient.value = effectController.mieCoefficient;
+        uniforms.mieDirectionalG.value = effectController.mieDirectionalG;
+
+        var theta = Math.PI * ( effectController.inclination - 0.5 );
+        var phi = 2 * Math.PI * ( effectController.azimuth - 0.5 );
+
+        sunSphere.position.x = distance * Math.cos( phi );
+        sunSphere.position.y = distance * Math.sin( phi ) * Math.sin( theta );
+        sunSphere.position.z = distance * Math.sin( phi ) * Math.cos( theta );
+
+        sunSphere.visible = effectController.sun;
+
+        sky.uniforms.sunPosition.value.copy( sunSphere.position );
+
+        //renderer.render( scene, camera );
+
+    }
+
+    /*var gui = new dat.GUI();
+
+    gui.add( effectController, "turbidity", 1.0, 20.0, 0.1 ).onChange( guiChanged );
+    gui.add( effectController, "reileigh", 0.0, 4, 0.001 ).onChange( guiChanged );
+    gui.add( effectController, "mieCoefficient", 0.0, 0.1, 0.001 ).onChange( guiChanged );
+    gui.add( effectController, "mieDirectionalG", 0.0, 1, 0.001 ).onChange( guiChanged );
+    gui.add( effectController, "luminance", 0.0, 2 ).onChange( guiChanged );
+    gui.add( effectController, "inclination", 0, 1, 0.0001 ).onChange( guiChanged );
+    gui.add( effectController, "azimuth", 0, 1, 0.0001 ).onChange( guiChanged );
+    gui.add( effectController, "sun" ).onChange( guiChanged );*/
+
+    guiChanged();
+
+}
 
 function initScene(){
 
@@ -55,7 +128,7 @@ function initScene(){
 
     // Setup three.js WebGL renderer. Note: Antialiasing is a big performance hit.
 // Only enable it if you actually need to.
-    var renderer = new THREE.WebGLRenderer({antialias: true, alpha: false}); //performance hits if antialias or alpha used
+    renderer = new THREE.WebGLRenderer({antialias: true, alpha: false}); //performance hits if antialias or alpha used
     renderer.setPixelRatio(window.devicePixelRatio);
     //renderer.setClearColor( 0x0000FF, 1 );
 
@@ -71,12 +144,12 @@ function initScene(){
     var starMagnitudeScaleFactor = 4; //higher number = smaller stars
 
 // Create a three.js scene.
-    var scene = new THREE.Scene();
+    scene = new THREE.Scene();
 
     var raycaster = new THREE.Raycaster();
 
 // Create a three.js camera.
-    var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2000000);
 
 
 // Apply VR headset positional data to camera.
@@ -105,7 +178,7 @@ function initScene(){
     }
 
     loader.load('assets/img/star_preview.png', onStarTextureLoaded);
-    var starMapTexture = loader.load('assets/img/starmap_4k_print.jpg');
+    //var starMapTexture = loader.load('assets/img/starmap_4k_print.jpg');
 
     /*function onTextureLoaded(texture) {
         texture.wrapS = THREE.RepeatWrapping;
@@ -151,7 +224,67 @@ function initScene(){
     //cube.position.z = -5;
 
     //if(debugOn){
-        var geometrySphere = new THREE.SphereGeometry(normalizeRadius);
+
+    var collada = require('three-loaders-collada')(THREE);
+
+    console.log('Collada: ',THREE.ColladaLoader)
+
+    //var loader2 = new THREE.ColladaLoader();
+
+    //loader2.options.convertUpAxis = true;
+
+    /*loader2.load(
+        // resource URL
+        'assets/img/skybox.dae',
+        // Function when resource is loaded
+        function ( collada ) {
+
+            var model = collada.scene.getObjectByName( "Cube" );
+
+            console.log('Children',model.children[0]);
+
+            var model_geometry = model.children[0].geometry;
+            var model_material = model.children[0].material;
+
+            console.log('Children material',model_material);
+
+            model_material.side = THREE.BackSide;
+            model_material.wireframe = true;
+            model_material.color = 0xffba00;
+
+            model.scale.set(200, 200, 200);
+            model.position.set(0,0,0);
+            model.updateMatrix();
+
+            scene.add( model );
+
+            console.log('Added skybox to scene');
+        },
+        // Function called when download progresses
+        function ( xhr ) {
+            console.log( (xhr.loaded / xhr.total * 100) + '% loaded' );
+        }
+    );*/
+
+    /*var urlPrefix = "assets/img/skybox/";
+    var urls = [ urlPrefix + "posx.jpg", urlPrefix + "negx.jpg",
+        urlPrefix + "posy.jpg", urlPrefix + "negy.jpg",
+        urlPrefix + "posz.jpg", urlPrefix + "negz.jpg" ];
+    var textureCube = THREE.ImageUtils.loadTextureCube( urls );
+
+    var shader = THREE.ShaderLib["cube"];
+    var uniforms = THREE.UniformsUtils.clone( shader.uniforms );
+    uniforms['tCube'].texture= textureCube;   // textureCube has been init before
+    var material = new THREE.ShaderMaterial({
+        fragmentShader    : shader.fragmentShader,
+        vertexShader  : shader.vertexShader,
+        uniforms  : uniforms
+    });*/
+
+
+
+
+        /*var geometrySphere = new THREE.SphereGeometry(normalizeRadius);
 
         var material = new THREE.MeshBasicMaterial({
             //color: 0xffba00,
@@ -162,7 +295,7 @@ function initScene(){
         });
 
         var sphere = new THREE.Mesh(geometrySphere,material);
-        sphere.name = "Sky Sphere";
+        sphere.name = "Sky Sphere";*/
         //scene.add(sphere);
         //sphere.position.set(0,0,0);
    // }
@@ -323,7 +456,7 @@ function initScene(){
                 targetSize = 7;
                 //doInsertPoint = false;
             } else if (starData.mag[l] >= 7 && starData.mag[l] < 16) {
-                //doInsertPoint = false;
+                doInsertPoint = false;
             } else {
                 doInsertPoint = false;
             }
@@ -359,7 +492,7 @@ function initScene(){
                 scene.add( sprite );
                 sprite.lookAt(camera.position);
 
-                console.log(starData.mag[l]);
+                //console.log(starData.mag[l]);
 
                 //sprite.rotation.y = 90 * Math.PI / 180;
 
@@ -510,7 +643,11 @@ function loadStarData(){
 
         //console.log(data);
 
+
+
         initScene();
+
+        initSky();
     });
 }
 

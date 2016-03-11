@@ -7,6 +7,7 @@
     "jquery": "^2.2.1",
     "rollup": "^0.25.4",
     "three": "^0.74.0",
+    "three-loaders-collada": "^1.0.1",
     "three-text2d": "^0.2.2",
     "webvr-boilerplate": "^0.3.7",
     "webvr-polyfill": "^0.2.7"
