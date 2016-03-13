@@ -127,7 +127,7 @@ function initSky() {
 
 function loadSkyBox() {
     var path = "assets/img/";
-    var format = '.jpg';
+    var format = '.png';
     var urls = [
         path + 'skybox_0' + format, path + 'skybox_1' + format,
         path + 'skybox_2' + format, path + 'skybox_3' + format,
@@ -136,7 +136,9 @@ function loadSkyBox() {
 
     /*
 
-        ['left','right','up','down','backward','forward']
+        ['left','right',
+        'up','down',
+        'backward','forward']
 
      */
 
@@ -540,7 +542,7 @@ function initScene(){
                 var pointCloud = new THREE.Points(pointCloudGeometries[j][m], material);
 
                 centerObject(pointCloud);
-                scene.add(pointCloud);
+                //scene.add(pointCloud);
             }
 
 
