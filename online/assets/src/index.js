@@ -178,14 +178,14 @@ function initScene(){
 
     // Setup three.js WebGL renderer. Note: Antialiasing is a big performance hit.
 // Only enable it if you actually need to.
-    renderer = new THREE.WebGLRenderer({antialias: true, alpha: false}); //performance hits if antialias or alpha used
+    renderer = new THREE.WebGLRenderer({antialias: false, alpha: false}); //performance hits if antialias or alpha used
     renderer.setPixelRatio(window.devicePixelRatio);
     //renderer.setClearColor( 0x00a6ec, 1 );
 
 // Append the canvas element created by the renderer to document body element.
     document.body.appendChild(renderer.domElement);
 
-    var debugOn = false;
+    var debugOn = true;
     //var starCount = 10000;
     var normalizeRadius = 500;
     var pointCloudCount = 3;
@@ -199,8 +199,16 @@ function initScene(){
 
     //var raycaster = new THREE.Raycaster();
 
+    var cameraContainer = new THREE.Object3D();
+    cameraContainer.rotation.order = "YXZ"; // maybe not necessary
+
 // Create a three.js camera.
     camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2000000);
+
+    cameraContainer.add(camera);
+    scene.add(cameraContainer);
+
+    cameraContainer.rotation.x = 90 * Math.PI / 180;
 
     //lastCameraX = camera.rotation.x;
     //lastCameraY = camera.rotation.y;
@@ -258,7 +266,8 @@ function initScene(){
         ms_Water.material
     );
     aMeshMirror.add(ms_Water);
-    aMeshMirror.rotation.x = - Math.PI * 0.5;
+    //aMeshMirror.rotation.x = - Math.PI * 0.5;
+    aMeshMirror.rotation.set(cameraContainer.rotation);
 
     scene.add(aMeshMirror);
 

@@ -99,3 +99,4 @@ full list of the updated column names, see the official database documentation o
 *   [What Are Celestial Coordinates](http://www.skyandtelescope.com/astronomy-resources/what-are-celestial-coordinates/)
 *   [Scientific Visualization Studio](http://svs.gsfc.nasa.gov/cgi-bin/details.cgi?aid=3895)
 *   [Planetary Annihilation Skyboxes](http://www.superouman.net/planetary-annihilation-skyboxes.php)
+*   [How to Find the Milky Way](http://www.lonelyspeck.com/how-to-find-the-milky-way/)
