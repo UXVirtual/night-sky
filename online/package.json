@@ -4,6 +4,7 @@
   "description": "A prototype of the night sky VR functionality.",
   "main": "index.js",
   "dependencies": {
+    "dat-gui": "^0.5.0",
     "jquery": "^2.2.1",
     "rollup": "^0.25.4",
     "three": "^0.74.0",

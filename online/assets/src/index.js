@@ -6,6 +6,8 @@ import 'webvr-polyfill/src/main'
 
 import 'webvr-boilerplate'
 
+import 'dat-gui'
+
 import $ from 'jquery'
 
 import './vendor/three/examples/js/controls/VRControls'
@@ -52,6 +54,21 @@ var sky, sunSphere, scene, renderer, camera;
 var lastCameraX, lastCameraY, lastCameraZ;
 var starData;
 var ms_Water;
+var skyBox;
+var cameraFOV = 45;
+
+var parameters =
+{
+    rotX: 34,
+    rotY: 32,
+    rotZ: 60
+};
+
+var debugOn = true;
+
+var pointClouds = [];
+
+var spriteContainer;
 
 //console.log(THREE);
 
@@ -165,11 +182,26 @@ function loadSkyBox() {
         side: THREE.BackSide
     });
 
-    var skyBox = new THREE.Mesh(
+    skyBox = new THREE.Mesh(
         new THREE.BoxGeometry(100000, 100000, 100000),
         skyBoxMaterial
     );
     scene.add(skyBox);
+
+    if(debugOn){
+        var dat = require('dat-gui');
+
+        var gui = new dat.GUI();
+
+
+        // gui.add( parameters )
+        gui.add( parameters, 'rotX' ).min(0).max(359).step(1).name('Skybox RotX');
+        gui.add( parameters, 'rotY' ).min(0).max(359).step(1).name('Skybox RotY');
+        gui.add( parameters, 'rotZ' ).min(0).max(359).step(1).name('Skybox RotZ');
+        gui.open();
+    }
+
+
 }
 
 function initScene(){
@@ -185,7 +217,7 @@ function initScene(){
 // Append the canvas element created by the renderer to document body element.
     document.body.appendChild(renderer.domElement);
 
-    var debugOn = true;
+
     //var starCount = 10000;
     var normalizeRadius = 500;
     var pointCloudCount = 3;
@@ -203,7 +235,7 @@ function initScene(){
     cameraContainer.rotation.order = "YXZ"; // maybe not necessary
 
 // Create a three.js camera.
-    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2000000);
+    camera = new THREE.PerspectiveCamera(cameraFOV, window.innerWidth / window.innerHeight, 0.1, 2000000);
 
     cameraContainer.add(camera);
     scene.add(cameraContainer);
@@ -267,7 +299,7 @@ function initScene(){
     );
     aMeshMirror.add(ms_Water);
     //aMeshMirror.rotation.x = - Math.PI * 0.5;
-    aMeshMirror.rotation.set(cameraContainer.rotation);
+    //aMeshMirror.rotation.set(cameraContainer.rotation);
 
     scene.add(aMeshMirror);
 
@@ -326,6 +358,9 @@ function initScene(){
 
         var pointCloudGeometries = new Array(pointCloudCount);
 
+        spriteContainer = new THREE.Object3D();
+        scene.add( spriteContainer );
+
         for(var k = 0; k < pointCloudCount; k++){
             pointCloudGeometries[k] = new Array(starMagnitudes);
             for(var a = 0; a < starMagnitudes; a++){
@@ -362,7 +397,18 @@ function initScene(){
                 //console.log('Found',starData.proper[l]);
                 //targetPointCloudGeometry = pointCloudGeometries[7];
 
-                if(starData.proper[l] !== null || starData.bf[l] !== null || starData.gl[l] !== null){
+                doInsertSprite = true;
+
+
+
+
+
+                /*if(!(starData.con[l] === "Sgr" || starData.con[l] === "Sco")){
+                    doInsertSprite = false;
+                    doInsertPoint = false;
+                }*/
+
+                if(doInsertSprite && (starData.proper[l] !== null || starData.bf[l] !== null || starData.gl[l] !== null)){
 
                     if(debugOn){
 
@@ -371,7 +417,7 @@ function initScene(){
                         if(starLabel !== null){
                             var sprite = new SpriteText2D(starLabel, { align: new THREE.Vector2(0, 0),  font: '10px Arial', fillStyle: '#ffffff' , antialias: false })
                             sprite.position.set(x,y,z);
-                            scene.add(sprite);
+                            spriteContainer.add(sprite);
 
                             sprite.lookAt(camera.position);
 
@@ -381,7 +427,7 @@ function initScene(){
                     }
                 }
 
-                doInsertSprite = true;
+
 
 
 
@@ -492,7 +538,7 @@ function initScene(){
 
                 var sprite = new THREE.Sprite( material );
                 sprite.position.set(x,y,z);
-                scene.add( sprite );
+                spriteContainer.add( sprite );
                 sprite.lookAt(camera.position);
 
                 //console.log(starData.mag[l]);
@@ -550,6 +596,8 @@ function initScene(){
 
                 var pointCloud = new THREE.Points(pointCloudGeometries[j][m], material);
 
+                pointClouds.push(pointCloud);
+
                 centerObject(pointCloud);
                 //scene.add(pointCloud);
             }
@@ -579,8 +627,27 @@ function initScene(){
         //var delta = Math.min(timestamp - lastRender, 500);
         lastRender = timestamp;
 
+
+
         // Update VR headset position and apply to camera.
         controls.update();
+
+
+        for(var i = 0; i < pointClouds.length; i++){
+            // rotate the skybox around its axis
+
+            pointClouds[i].rotation.set(parameters.rotX * Math.PI / 180,parameters.rotY * Math.PI / 180,parameters.rotZ * Math.PI / 180);
+
+            console.log('Rotating pointcloud',pointClouds[i].rotation);
+        }
+
+
+        if(typeof spriteContainer !== 'undefined'){
+            spriteContainer.rotation.set(parameters.rotX * Math.PI / 180,parameters.rotY * Math.PI / 180,parameters.rotZ * Math.PI / 180);
+        }
+
+
+
 
         ms_Water.material.uniforms.time.value += 1.0 / 60.0;
 
