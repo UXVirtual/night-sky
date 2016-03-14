@@ -57,14 +57,20 @@ var ms_Water;
 var skyBox;
 var cameraFOV = 45;
 
+var aMeshMirror;
+
 var parameters =
 {
     rotX: 34,
     rotY: 32,
-    rotZ: 60
+    rotZ: 60,
+    rotXFloor: 90,
+    rotYFloor: 0,
+    rotZFloor: 0
+
 };
 
-var debugOn = true;
+var debugOn = false;
 
 var pointClouds = [];
 
@@ -198,6 +204,11 @@ function loadSkyBox() {
         gui.add( parameters, 'rotX' ).min(0).max(359).step(1).name('Skybox RotX');
         gui.add( parameters, 'rotY' ).min(0).max(359).step(1).name('Skybox RotY');
         gui.add( parameters, 'rotZ' ).min(0).max(359).step(1).name('Skybox RotZ');
+
+
+        gui.add( parameters, 'rotXFloor' ).min(0).max(359).step(1).name('Floor RotX');
+        gui.add( parameters, 'rotYFloor' ).min(0).max(359).step(1).name('Floor RotY');
+        gui.add( parameters, 'rotZFloor' ).min(0).max(359).step(1).name('Floor RotZ');
         gui.open();
     }
 
@@ -278,31 +289,45 @@ function initScene(){
     directionalLight.position.set(-400, 100, -500);
     scene.add(directionalLight);
 
-    // Load textures
-    var waterNormals = new THREE.ImageUtils.loadTexture('assets/img/waternormals.jpg');
-    waterNormals.wrapS = waterNormals.wrapT = THREE.RepeatWrapping;
+    if(debugOn){
+        var geometry = new THREE.PlaneGeometry( 1500, 1500, 10, 10 );
+        var material = new THREE.MeshBasicMaterial( {color: 0xffff00, side: THREE.DoubleSide, wireframe: true} );
+        aMeshMirror = new THREE.Mesh( geometry, material );
+    }else{
+        // Load textures
+        var waterNormals = new THREE.ImageUtils.loadTexture('assets/img/waternormals.jpg');
+        waterNormals.wrapS = waterNormals.wrapT = THREE.RepeatWrapping;
 
-    // Create the water effect
-    ms_Water = new THREE.Water(renderer, camera, scene, {
-        textureWidth: 256,
-        textureHeight: 256,
-        waterNormals: waterNormals,
-        alpha: 	1.0,
-        sunDirection: directionalLight.position.normalize(),
-        sunColor: 0xffffff,
-        waterColor: 0x001e0f,
-        betaVersion: 0
-    });
-    var aMeshMirror = new THREE.Mesh(
-        new THREE.PlaneBufferGeometry(1500, 1500, 10, 10),
-        ms_Water.material
-    );
-    aMeshMirror.add(ms_Water);
-    //aMeshMirror.rotation.x = - Math.PI * 0.5;
-    //aMeshMirror.rotation.set(cameraContainer.rotation);
+        // Create the water effect
+        ms_Water = new THREE.Water(renderer, camera, scene, {
+            textureWidth: 256,
+            textureHeight: 256,
+            waterNormals: waterNormals,
+            alpha: 	1.0,
+            sunDirection: directionalLight.position.normalize(),
+            sunColor: 0xffffff,
+            waterColor: 0x001e0f,
+            distortionScale: 50.0,
+            side: THREE.BackSide
+        });
+        aMeshMirror = new THREE.Mesh(
+            new THREE.PlaneBufferGeometry(1500, 1500, 10, 10),
+            ms_Water.material
+        );
+
+
+        aMeshMirror.add(ms_Water);
+
+        console.log('Meshmirror: ',aMeshMirror);
+
+        ms_Water.render();
+    }
+
+
 
     scene.add(aMeshMirror);
-
+    aMeshMirror.position.set(0,-20,0);
+    //aMeshMirror.lookAt(camera.position);
 
 
     loader.load('assets/img/star_preview3.png', onStarTextureLoaded);
@@ -338,8 +363,8 @@ function initScene(){
 
 // Create a VR manager helper to enter and exit VR mode.
     var params = {
-        hideButton: false, // Default: false.
-        isUndistorted: false // Default: false.
+        hideButton: true, // Default: false.
+        isUndistorted: true // Default: false.
     };
     var manager = new WebVRManager(renderer, effect, params);
 
@@ -627,7 +652,10 @@ function initScene(){
         //var delta = Math.min(timestamp - lastRender, 500);
         lastRender = timestamp;
 
-
+        if(!debugOn){
+            ms_Water.material.uniforms.time.value += 1.0 / 60.0;
+            ms_Water.render();
+        }
 
         // Update VR headset position and apply to camera.
         controls.update();
@@ -638,7 +666,7 @@ function initScene(){
 
             pointClouds[i].rotation.set(parameters.rotX * Math.PI / 180,parameters.rotY * Math.PI / 180,parameters.rotZ * Math.PI / 180);
 
-            console.log('Rotating pointcloud',pointClouds[i].rotation);
+            //console.log('Rotating pointcloud',pointClouds[i].rotation);
         }
 
 
@@ -646,12 +674,14 @@ function initScene(){
             spriteContainer.rotation.set(parameters.rotX * Math.PI / 180,parameters.rotY * Math.PI / 180,parameters.rotZ * Math.PI / 180);
         }
 
+        if(typeof aMeshMirror !== 'undefined' && aMeshMirror !== null){
+            aMeshMirror.rotation.set(parameters.rotXFloor * Math.PI / 180,parameters.rotYFloor * Math.PI / 180,parameters.rotZFloor * Math.PI / 180);
+        }
 
 
 
-        ms_Water.material.uniforms.time.value += 1.0 / 60.0;
 
-        ms_Water.render();
+
 
         //if((typeof skipRenderCheck !== 'undefined' && skipRenderCheck) && (camera.rotation.x !== lastCameraX || camera.rotation.y !== lastCameraY || camera.rotation.z !== lastCameraZ)){
             // Render the scene through the manager.
