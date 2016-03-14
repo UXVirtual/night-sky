@@ -50,7 +50,7 @@ WebVRConfig = {
     NO_DPDB_FETCH: true  // Default: false.
 };
 
-var sky, sunSphere, scene, renderer, camera;
+var sky, sphere, sphereContainer, cameraContainer, scene, renderer, camera;
 var lastCameraX, lastCameraY, lastCameraZ;
 var starData;
 var ms_Water;
@@ -64,89 +64,27 @@ var parameters =
     rotX: 34,
     rotY: 32,
     rotZ: 60,
-    rotXFloor: 90,
-    rotYFloor: 0,
-    rotZFloor: 0
-
+    rotXFloor: 33,
+    rotYFloor: 212,
+    rotZFloor: 90,
+    floorOffset: 5,
+    cameraContainerRotX: 0,
+    cameraContainerRotY: 0,
+    cameraContainerRotZ: 180,
+    sphereRotX: 270,
+    sphereRotY: 0,
+    sphereRotZ: 0
 };
 
-var debugOn = false;
+var defaultWaterSide = THREE.FrontSide;
+
+var debugOn = true;
 
 var pointClouds = [];
 
 var spriteContainer;
 
 //console.log(THREE);
-
-//sky shader based on: http://threejs.org/examples/webgl_shaders_sky.html
-function initSky() {
-
-    // Add Sky Mesh
-    sky = new THREE.Sky();
-    scene.add( sky.mesh );
-
-    // Add Sun Helper
-    sunSphere = new THREE.Mesh(
-        new THREE.SphereBufferGeometry( 20000, 16, 8 ),
-        new THREE.MeshBasicMaterial( { color: 0xffffff } )
-    );
-    sunSphere.position.y = - 700000;
-    sunSphere.visible = false;
-    //scene.add( sunSphere );
-
-    /// GUI
-
-    var effectController  = {
-        turbidity: 2,
-        reileigh: 4,
-        mieCoefficient: 0.005,
-        mieDirectionalG: 0.8,
-        luminance: 1,
-        inclination: 0.49, // elevation / inclination
-        azimuth: 0.25, // Facing front,
-        sun: false
-    };
-
-    var distance = 400000;
-
-    function guiChanged() {
-
-        var uniforms = sky.uniforms;
-        uniforms.turbidity.value = effectController.turbidity;
-        uniforms.reileigh.value = effectController.reileigh;
-        uniforms.luminance.value = effectController.luminance;
-        uniforms.mieCoefficient.value = effectController.mieCoefficient;
-        uniforms.mieDirectionalG.value = effectController.mieDirectionalG;
-
-        var theta = Math.PI * ( effectController.inclination - 0.5 );
-        var phi = 2 * Math.PI * ( effectController.azimuth - 0.5 );
-
-        sunSphere.position.x = distance * Math.cos( phi );
-        sunSphere.position.y = distance * Math.sin( phi ) * Math.sin( theta );
-        sunSphere.position.z = distance * Math.sin( phi ) * Math.cos( theta );
-
-        sunSphere.visible = effectController.sun;
-
-        sky.uniforms.sunPosition.value.copy( sunSphere.position );
-
-        //renderer.render( scene, camera );
-
-    }
-
-    /*var gui = new dat.GUI();
-
-    gui.add( effectController, "turbidity", 1.0, 20.0, 0.1 ).onChange( guiChanged );
-    gui.add( effectController, "reileigh", 0.0, 4, 0.001 ).onChange( guiChanged );
-    gui.add( effectController, "mieCoefficient", 0.0, 0.1, 0.001 ).onChange( guiChanged );
-    gui.add( effectController, "mieDirectionalG", 0.0, 1, 0.001 ).onChange( guiChanged );
-    gui.add( effectController, "luminance", 0.0, 2 ).onChange( guiChanged );
-    gui.add( effectController, "inclination", 0, 1, 0.0001 ).onChange( guiChanged );
-    gui.add( effectController, "azimuth", 0, 1, 0.0001 ).onChange( guiChanged );
-    gui.add( effectController, "sun" ).onChange( guiChanged );*/
-
-    guiChanged();
-
-}
 
 function loadSkyBox() {
     var path = "assets/img/";
@@ -209,6 +147,20 @@ function loadSkyBox() {
         gui.add( parameters, 'rotXFloor' ).min(0).max(359).step(1).name('Floor RotX');
         gui.add( parameters, 'rotYFloor' ).min(0).max(359).step(1).name('Floor RotY');
         gui.add( parameters, 'rotZFloor' ).min(0).max(359).step(1).name('Floor RotZ');
+
+        gui.add( parameters, 'floorOffset' ).min(-200).max(200).step(5).name('Floor Offset');
+
+        gui.add( parameters, 'cameraContainerRotX' ).min(0).max(359).step(1).name('Camera RotX');
+        gui.add( parameters, 'cameraContainerRotY' ).min(0).max(359).step(1).name('Camera RotY');
+        gui.add( parameters, 'cameraContainerRotZ' ).min(0).max(359).step(1).name('Camera RotZ');
+
+        gui.add( parameters, 'sphereRotX' ).min(0).max(359).step(1).name('Sphere RotX');
+        gui.add( parameters, 'sphereRotY' ).min(0).max(359).step(1).name('Sphere RotY');
+        gui.add( parameters, 'sphereRotY' ).min(0).max(359).step(1).name('Sphere RotZ');
+
+
+
+
         gui.open();
     }
 
@@ -242,16 +194,16 @@ function initScene(){
 
     //var raycaster = new THREE.Raycaster();
 
-    var cameraContainer = new THREE.Object3D();
+    cameraContainer = new THREE.Object3D();
     cameraContainer.rotation.order = "YXZ"; // maybe not necessary
 
 // Create a three.js camera.
     camera = new THREE.PerspectiveCamera(cameraFOV, window.innerWidth / window.innerHeight, 0.1, 2000000);
 
     cameraContainer.add(camera);
-    scene.add(cameraContainer);
 
-    cameraContainer.rotation.x = 90 * Math.PI / 180;
+
+    //cameraContainer.rotation.x = 90 * Math.PI / 180;
 
     //lastCameraX = camera.rotation.x;
     //lastCameraY = camera.rotation.y;
@@ -289,16 +241,17 @@ function initScene(){
     directionalLight.position.set(-400, 100, -500);
     scene.add(directionalLight);
 
-    if(debugOn){
+    /*if(debugOn){
         var geometry = new THREE.PlaneGeometry( 1500, 1500, 10, 10 );
         var material = new THREE.MeshBasicMaterial( {color: 0xffff00, side: THREE.DoubleSide, wireframe: true} );
         aMeshMirror = new THREE.Mesh( geometry, material );
-    }else{
+    }else{*/
         // Load textures
         var waterNormals = new THREE.ImageUtils.loadTexture('assets/img/waternormals.jpg');
         waterNormals.wrapS = waterNormals.wrapT = THREE.RepeatWrapping;
 
-        // Create the water effect
+
+        // Create the water effect - use THREE.BackSide or THREE.FrontSide depending on the default rotation of the cameraContainer
         ms_Water = new THREE.Water(renderer, camera, scene, {
             textureWidth: 256,
             textureHeight: 256,
@@ -308,7 +261,8 @@ function initScene(){
             sunColor: 0xffffff,
             waterColor: 0x001e0f,
             distortionScale: 50.0,
-            side: THREE.BackSide
+            //side: (parameters.cameraContainerRotY == 180) ? THREE.FrontSide : THREE.BackSide
+            side: defaultWaterSide
         });
         aMeshMirror = new THREE.Mesh(
             new THREE.PlaneBufferGeometry(1500, 1500, 10, 10),
@@ -320,36 +274,34 @@ function initScene(){
 
         console.log('Meshmirror: ',aMeshMirror);
 
-        ms_Water.render();
-    }
+        //aMeshMirror.rotation.order = "YXZ"; // maybe not necessary
+
+        //ms_Water.render();
+    //}
 
 
 
     scene.add(aMeshMirror);
-    aMeshMirror.position.set(0,-20,0);
+    //aMeshMirror.position.set(0,-20,0);
     //aMeshMirror.lookAt(camera.position);
+
+    //if(debugOn){
+        var geometry = new THREE.SphereGeometry( 5, 32, 32 );
+        var material = new THREE.MeshBasicMaterial( {color: 0xffff00, wireframe: true} );
+        sphereContainer = new THREE.Object3D;
+        sphere = new THREE.Mesh( geometry, material );
+        sphereContainer.add( sphere );
+        scene.add(sphereContainer);
+
+    sphere.add(cameraContainer);
+    //scene.add(cameraContainer);
+    //}
+
+
 
 
     loader.load('assets/img/star_preview3.png', onStarTextureLoaded);
-    //var starMapTexture = loader.load('assets/img/starmap_4k_print.jpg');
 
-    /*function onTextureLoaded(texture) {
-        texture.wrapS = THREE.RepeatWrapping;
-        texture.wrapT = THREE.RepeatWrapping;
-        texture.repeat.set(boxWidth/20, boxWidth/20);
-
-        var geometry = new THREE.BoxGeometry(boxWidth, boxWidth, boxWidth);
-        var material = new THREE.MeshBasicMaterial({
-            map: texture,
-            color: 0xffba00,
-            side: THREE.BackSide,
-            wireframe: debugOn
-        });
-
-        var skybox = new THREE.Mesh(geometry, material);
-        skybox.position.set(0,0,0)
-        scene.add(skybox);
-    }*/
     function onStarTextureLoaded(texture){
         initStars(texture);
     }
@@ -652,10 +604,10 @@ function initScene(){
         //var delta = Math.min(timestamp - lastRender, 500);
         lastRender = timestamp;
 
-        if(!debugOn){
+        //if(!debugOn){
             ms_Water.material.uniforms.time.value += 1.0 / 60.0;
             ms_Water.render();
-        }
+        //}
 
         // Update VR headset position and apply to camera.
         controls.update();
@@ -669,6 +621,11 @@ function initScene(){
             //console.log('Rotating pointcloud',pointClouds[i].rotation);
         }
 
+        if(typeof cameraContainer !== 'undefined'){
+            cameraContainer.rotation.set(parameters.cameraContainerRotX * Math.PI / 180,parameters.cameraContainerRotY * Math.PI / 180,parameters.cameraContainerRotZ * Math.PI / 180);
+
+        }
+
 
         if(typeof spriteContainer !== 'undefined'){
             spriteContainer.rotation.set(parameters.rotX * Math.PI / 180,parameters.rotY * Math.PI / 180,parameters.rotZ * Math.PI / 180);
@@ -676,6 +633,12 @@ function initScene(){
 
         if(typeof aMeshMirror !== 'undefined' && aMeshMirror !== null){
             aMeshMirror.rotation.set(parameters.rotXFloor * Math.PI / 180,parameters.rotYFloor * Math.PI / 180,parameters.rotZFloor * Math.PI / 180);
+            aMeshMirror.position.set(parameters.floorOffset,0,0);
+            if(debugOn){
+                sphereContainer.rotation.set(parameters.rotXFloor * Math.PI / 180,parameters.rotYFloor * Math.PI / 180,parameters.rotZFloor * Math.PI / 180);
+                sphere.rotation.set(parameters.sphereRotX * Math.PI / 180,parameters.sphereRotY * Math.PI / 180,parameters.sphereRotZ * Math.PI / 180);
+            }
+
         }
 
 
