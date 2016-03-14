@@ -86,6 +86,10 @@ full list of the updated column names, see the official database documentation o
 *   `var_min`, `var_max`: Star's approximate magnitude range, for variables. This value is based on the Hp magnitudes 
     for the range in the original Hipparcos catalog, adjusted to the V magnitude scale to match the "mag" field.
 
+## Tools
+
+*   [Three.js Inspector](https://chrome.google.com/webstore/detail/threejs-inspector/dnhjfclbfhcbcdfpjaeacomhbdfjbebi/related?hl=en)
+
 ## Examples
 
 *   [Three JS Point Cloud Experiment](http://codepen.io/seanseansean/pen/EaBZEY)
