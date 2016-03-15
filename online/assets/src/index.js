@@ -81,23 +81,23 @@ var parameters =
     moonLightDirY: -500,
     moonLightDirZ: 100,
 
-    rotXFloor: 33, //defines rotation of floor to sphereContainer
-    rotYFloor: 212, //defines rotation of floor to sphereContainer
-    rotZFloor: 212, //defines rotation of floor to sphereContainer
-    floorOffset: 30, //defines offset of floor to sphereContainer
+    rotXFloor: 319, //defines rotation of floor to sphereContainer
+    rotYFloor: 0, //defines rotation of floor to sphereContainer
+    rotZFloor: 47, //defines rotation of floor to sphereContainer
+    floorOffset: 1, //defines offset of floor to sphereContainer
     cameraContainerRotX: 0, //defines default rotation of camera
-    cameraContainerRotY: 253, //defines default rotation of camera
+    cameraContainerRotY: 0, //defines default rotation of camera
     cameraContainerRotZ: 0, //defines default rotation of camera
-    cameraOffset: 0,
-    sphereRotX: 90, //defines default rotation of sphere used to point to north and south celestial poles
+    cameraOffset: 0, //set to 0 to hide water, set to 1 to show
+    sphereRotX: 0, //defines default rotation of sphere used to point to north and south celestial poles
     sphereRotY: 0, //defines default rotation of sphere used to point to north and south celestial poles - if the camera is added to `sphere` and the Y axis is rotated around the sky will appear to rotate around the north / south points
     sphereRotZ: 0, //defines default rotation of sphere used to point to north and south celestial poles
-    sphere2RotX: 66.6, //defines default rotation of sphere used to point to north and south celestial poles
+    sphere2RotX: 90, //defines default rotation of sphere used to point to north and south celestial poles
     sphere2RotY: 0, //defines default rotation of sphere used to point to north and south celestial poles
     sphere2RotZ: 0, //defines default rotation of sphere used to point to north and south celestial poles
-    sphereContainerRotX: 33, //defines default rotation of sphereContainer. Controls global orientation of camera
-    sphereContainerRotY: 212, //defines default rotation of sphereContainer. Controls global orientation of camera
-    sphereContainerRotZ: 212, //defines default rotation of sphereContainer. Controls global orientation of camera
+    sphereContainerRotX: 296, //defines default rotation of sphereContainer. Controls global orientation of camera
+    sphereContainerRotY: 0, //defines default rotation of sphereContainer. Controls global orientation of camera
+    sphereContainerRotZ: 47, //defines default rotation of sphereContainer. Controls global orientation of camera
 
     skyboxRotX: 0,
     skyboxRotY: 0,
@@ -142,6 +142,8 @@ function loadSkyBox() {
 
      */
 
+
+
     var cubeMap = THREE.ImageUtils.loadTextureCube(urls);
     cubeMap.format = THREE.RGBFormat;
     cubeMap.flipY = false;
@@ -152,15 +154,37 @@ function loadSkyBox() {
     var skyBoxMaterial = new THREE.ShaderMaterial({
         fragmentShader: cubeShader.fragmentShader,
         vertexShader: cubeShader.vertexShader,
+        map: cubeMap,
         uniforms: cubeShader.uniforms,
         depthWrite: false,
         side: THREE.BackSide
     });
 
-    skyBox = new THREE.Mesh(
+    /*skyBox = new THREE.Mesh(
+        new THREE.SphereGeometry(100000, 32, 32),
+        new THREE.MeshBasicMaterial({
+            map: THREE.ImageUtils.loadTexture('assets/img/starmap_g4k.jpg'),
+
+            side: THREE.BackSide
+        })
+    );*/
+
+    //skybox is now no longer using shaders and has actual geometry instead so we can rotate it
+    var skyGeometry = new THREE.CubeGeometry( 100000, 100000, 100000 );
+
+    var materialArray = [];
+    for (var i = 0; i < 6; i++)
+        materialArray.push( new THREE.MeshBasicMaterial({
+            map: THREE.ImageUtils.loadTexture( urls[i] ),
+            side: THREE.BackSide
+        }));
+    var skyMaterial = new THREE.MeshFaceMaterial( materialArray );
+    skyBox = new THREE.Mesh( skyGeometry, skyMaterial );
+
+    /*skyBox = new THREE.Mesh(
         new THREE.BoxGeometry(100000, 100000, 100000),
         skyBoxMaterial
-    );
+    );*/
     scene.add(skyBox);
 
     if(debugOn){
@@ -250,7 +274,7 @@ function initScene(){
     //var raycaster = new THREE.Raycaster();
 
     cameraContainer = new THREE.Object3D();
-    cameraContainer.rotation.order = "YXZ"; // maybe not necessary
+    //cameraContainer.rotation.order = "YXZ"; // maybe not necessary
 
 // Create a three.js camera.
     camera = new THREE.PerspectiveCamera(cameraFOV, window.innerWidth / window.innerHeight, 0.1, 2000000);
@@ -344,7 +368,7 @@ function initScene(){
 
     //if(debugOn){
         sphereContainer = new THREE.Object3D;
-
+        //cameraContainer.rotation.order = "ZXY"
 
 
         var geometry = new THREE.SphereGeometry( 5, 32, 32 );
@@ -359,14 +383,14 @@ function initScene(){
 
 
 
-        if(debugOn){
+        /*if(debugOn){
 
             var material2 = new THREE.MeshBasicMaterial( {color: 0xffffff, wireframe: true, opacity: 0.05, transparent: true} );
 
             sphere2 = new THREE.Mesh( geometry, material2 );
-        }else{
+        }else{*/
             sphere2 = new THREE.Object3D;
-        }
+        //}
 
         //var moonTexture = THREE.ImageUtils.loadTexture('assets/img/moon1024x512.jpg');
         //var moonNormal = THREE.ImageUtils.loadTexture('assets/img/normal1024x512.jpg');
@@ -408,9 +432,15 @@ function initScene(){
         sphereContainer.add( sphere2 );
 
     scene.add(aMeshMirror); //reflections don't work correctly unless aMeshMirror added to scene
-    sphere.add(cameraContainer);
-    //sphereContainer.rotation.order = "ZYX"; // maybe not necessary
+    sphere2.add(cameraContainer);
+    //sphereContainer.eulerOrder = 'ZXY'; // change the eulerOrder to lock the rotation around the Y axis
 
+    //aMeshMirror.eulerOrder = 'ZXY';
+
+    sphereContainer.eulerOrder = 'ZXY'; // change the eulerOrder to lock the rotation around the Y axis
+
+    aMeshMirror.eulerOrder = 'ZXY';
+    //sphere.eulerOrder = 'ZXY';
     scene.add(sphereContainer);
 
     aMeshMirror.add(directionalLight); //reflections don't work correctly unless light added to scene
@@ -753,12 +783,38 @@ function initScene(){
         }
 
         if(typeof aMeshMirror !== 'undefined' && aMeshMirror !== null){
+            //aMeshMirror.rotation.set(parameters.rotXFloor * Math.PI / 180,parameters.rotYFloor * Math.PI / 180,parameters.rotZFloor * Math.PI / 180);
             aMeshMirror.rotation.set(parameters.sphereContainerRotX * Math.PI / 180,parameters.sphereContainerRotY * Math.PI / 180,parameters.sphereContainerRotZ * Math.PI / 180);
-            //aMeshMirror.rotation.set(parameters.sphereContainerRotX * Math.PI / 180,parameters.sphereContainerRotY * Math.PI / 180,parameters.sphereContainerRotZ * Math.PI / 180);
 
+            /*var position = new THREE.Vector3();
+            var quaternion = new THREE.Quaternion();
+            var scale = new THREE.Vector3();
 
+            cameraContainer.updateMatrixWorld( true );
 
+            cameraContainer.matrixWorld.decompose( position, quaternion, scale );
 
+            aMeshMirror.quaternion.copy( quaternion );
+
+            //var newQuaternion = THREE.Object3D.getWorldQuaternion( cameraContainer.position );
+
+            //aMeshMirror.matrix.makeRotationFromQuaternion(quaternion);
+            //aMeshMirror.matrix.setPosition(parameters.floorOffset,0,0);
+            //aMeshMirror.matrixAutoUpdate = false;
+
+            //aMeshMirror.quaternion = quaternion;
+            aMeshMirror.updateMatrix();*/
+
+            //if(debugOn){
+            sphereContainer.rotation.set(parameters.sphereContainerRotX * Math.PI / 180,parameters.sphereContainerRotY * Math.PI / 180,parameters.sphereContainerRotZ * Math.PI / 180);
+            sphere.rotation.set(parameters.sphereRotX * Math.PI / 180,parameters.sphereRotY * Math.PI / 180,parameters.sphereRotZ * Math.PI / 180);
+            sphere2.rotation.set(parameters.sphere2RotX * Math.PI / 180,parameters.sphere2RotY * Math.PI / 180,parameters.sphere2RotZ * Math.PI / 180);
+            //}
+
+            //aMeshMirror.matrixNeedsUpdate = true;
+
+            //aMeshMirror.applyMatrix( new THREE.Matrix4().makeTranslation(parameters.floorOffset,0,0) );
+            //aMeshMirror.verticesNeedUpdate = true
 
             aMeshMirror.position.set(parameters.floorOffset,0,0);
             //if(debugOn){
