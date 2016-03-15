@@ -53,7 +53,7 @@ WebVRConfig = {
     NO_DPDB_FETCH: true  // Default: false.
 };
 
-var sky, sphere, sphere2, moonLightDirection, moonLightDebugSphere, sphereContainer, lightDirDebugSphere, cameraContainer, scene, renderer, camera;
+var sky, sphere, sphere2, moonLightDirection, moonLightDebugSphere, sphereContainer, lightDirDebugSphere, cameraContainer, skyboxContainer, skyboxContainer2, scene, renderer, camera;
 var lastCameraX, lastCameraY, lastCameraZ;
 var starData;
 var ms_Water;
@@ -73,40 +73,48 @@ var parameters =
     rotX: 34, //don't touch - defines rotation of star container to skybox!
     rotY: 32, //don't touch - defines rotation of star container to skybox!
     rotZ: 60, //don't touch - defines rotation of star container to skybox!
-    lightDirX: 1950,
-    lightDirY: -550,
-    lightDirZ: 300,
+    lightDirX: 0,
+    lightDirY: 0,
+    lightDirZ: -1000,
 
     moonLightDirX: -50,
     moonLightDirY: -500,
     moonLightDirZ: 100,
 
-    rotXFloor: 319, //defines rotation of floor to sphereContainer
+    rotXFloor: 270, //defines rotation of floor to sphereContainer
     rotYFloor: 0, //defines rotation of floor to sphereContainer
-    rotZFloor: 47, //defines rotation of floor to sphereContainer
-    floorOffset: 1, //defines offset of floor to sphereContainer
+    rotZFloor: 0, //defines rotation of floor to sphereContainer
+    floorOffset: -10, //defines offset of floor to sphereContainer
     cameraContainerRotX: 0, //defines default rotation of camera
-    cameraContainerRotY: 0, //defines default rotation of camera
+    cameraContainerRotY: 160, //defines default rotation of camera - linked to compass direction
     cameraContainerRotZ: 0, //defines default rotation of camera
     cameraOffset: 0, //set to 0 to hide water, set to 1 to show
     sphereRotX: 0, //defines default rotation of sphere used to point to north and south celestial poles
     sphereRotY: 0, //defines default rotation of sphere used to point to north and south celestial poles - if the camera is added to `sphere` and the Y axis is rotated around the sky will appear to rotate around the north / south points
     sphereRotZ: 0, //defines default rotation of sphere used to point to north and south celestial poles
-    sphere2RotX: 90, //defines default rotation of sphere used to point to north and south celestial poles
+    sphere2RotX: 0, //defines default rotation of sphere used to point to north and south celestial poles
     sphere2RotY: 0, //defines default rotation of sphere used to point to north and south celestial poles
     sphere2RotZ: 0, //defines default rotation of sphere used to point to north and south celestial poles
-    sphereContainerRotX: 296, //defines default rotation of sphereContainer. Controls global orientation of camera
+    sphereContainerRotX: 0, //defines default rotation of sphereContainer. Controls global orientation of camera
     sphereContainerRotY: 0, //defines default rotation of sphereContainer. Controls global orientation of camera
-    sphereContainerRotZ: 47, //defines default rotation of sphereContainer. Controls global orientation of camera
+    sphereContainerRotZ: 0, //defines default rotation of sphereContainer. Controls global orientation of camera
 
-    skyboxRotX: 0,
-    skyboxRotY: 0,
-    skyboxRotZ: 0
+    skyboxContainerRotX: 0,
+    skyboxContainerRotY: 0, //adjust Y value to rotate sky around fixed point - linked to time of day
+    skyboxContainerRotZ: 0,
+
+    skyboxContainer2RotX: 235, //ajust X value to rotate sky into position according to lat
+    skyboxContainer2RotY: 0,
+    skyboxContainer2RotZ: 175, //ajust X value to rotate sky into position according to long
+
+    skyboxRotX: 54,
+    skyboxRotY: 326,
+    skyboxRotZ: 347
 };
 
 var defaultWaterSide = THREE.FrontSide;
 
-var debugOn = false;
+var debugOn = true;
 
 var pointClouds = [];
 
@@ -144,7 +152,7 @@ function loadSkyBox() {
 
 
 
-    var cubeMap = THREE.ImageUtils.loadTextureCube(urls);
+    /*var cubeMap = THREE.ImageUtils.loadTextureCube(urls);
     cubeMap.format = THREE.RGBFormat;
     cubeMap.flipY = false;
 
@@ -158,7 +166,7 @@ function loadSkyBox() {
         uniforms: cubeShader.uniforms,
         depthWrite: false,
         side: THREE.BackSide
-    });
+    });*/
 
     /*skyBox = new THREE.Mesh(
         new THREE.SphereGeometry(100000, 32, 32),
@@ -185,7 +193,21 @@ function loadSkyBox() {
         new THREE.BoxGeometry(100000, 100000, 100000),
         skyBoxMaterial
     );*/
-    scene.add(skyBox);
+
+
+    skyboxContainer = new THREE.Object3D();
+
+    skyboxContainer2 = new THREE.Object3D();
+
+    scene.add(skyboxContainer2);
+
+    skyboxContainer2.add(skyboxContainer);
+
+    skyboxContainer.add(skyBox);
+
+    skyboxContainer2.add( sphere2 );
+
+    skyBox.add(sphereContainer);
 
     if(debugOn){
         var dat = require('dat-gui');
@@ -202,9 +224,9 @@ function loadSkyBox() {
         gui.add( parameters, 'lightDirY' ).min(-2000).max(2000).step(50).name('LightDir Y');
         gui.add( parameters, 'lightDirZ' ).min(-2000).max(2000).step(50).name('LightDir Z');
 
-        gui.add( parameters, 'moonLightDirX' ).min(-2000).max(2000).step(50).name('MoonLightDir X');
+        /*gui.add( parameters, 'moonLightDirX' ).min(-2000).max(2000).step(50).name('MoonLightDir X');
         gui.add( parameters, 'moonLightDirY' ).min(-2000).max(2000).step(50).name('MoonLightDir Y');
-        gui.add( parameters, 'moonLightDirZ' ).min(-2000).max(2000).step(50).name('MoonLightDir Z');
+        gui.add( parameters, 'moonLightDirZ' ).min(-2000).max(2000).step(50).name('MoonLightDir Z');*/
 
         gui.add( parameters, 'rotXFloor' ).min(0).max(359).step(1).name('Floor RotX');
         gui.add( parameters, 'rotYFloor' ).min(0).max(359).step(1).name('Floor RotY');
@@ -227,13 +249,21 @@ function loadSkyBox() {
         gui.add( parameters, 'sphere2RotY' ).min(0).max(359).step(1).name('Sphere2 RotY');
         gui.add( parameters, 'sphere2RotZ' ).min(0).max(359).step(1).name('Sphere2 RotZ');
 
-        gui.add( parameters, 'sphereContainerRotX' ).min(0).max(359).step(1).name('SphereCon RotX');
+        /*gui.add( parameters, 'sphereContainerRotX' ).min(0).max(359).step(1).name('SphereCon RotX');
         gui.add( parameters, 'sphereContainerRotY' ).min(0).max(359).step(1).name('SphereCon RotY');
-        gui.add( parameters, 'sphereContainerRotZ' ).min(0).max(359).step(1).name('SphereCon RotZ');
+        gui.add( parameters, 'sphereContainerRotZ' ).min(0).max(359).step(1).name('SphereCon RotZ');*/
 
         gui.add( parameters, 'skyboxRotX' ).min(0).max(359).step(1).name('Skybox RotX');
         gui.add( parameters, 'skyboxRotY' ).min(0).max(359).step(1).name('Skybox RotY');
         gui.add( parameters, 'skyboxRotZ' ).min(0).max(359).step(1).name('Skybox RotZ');
+
+        gui.add( parameters, 'skyboxContainerRotX' ).min(0).max(359).step(1).name('SkyboxCon RotX');
+        gui.add( parameters, 'skyboxContainerRotY' ).min(0).max(359).step(1).name('SkyboxCon RotY');
+        gui.add( parameters, 'skyboxContainerRotZ' ).min(0).max(359).step(1).name('SkyboxCon RotZ');
+
+        gui.add( parameters, 'skyboxContainer2RotX' ).min(0).max(359).step(1).name('SkyboxCon2 RotX');
+        gui.add( parameters, 'skyboxContainer2RotY' ).min(0).max(359).step(1).name('SkyboxCon2 RotY');
+        gui.add( parameters, 'skyboxContainer2RotZ' ).min(0).max(359).step(1).name('SkyboxCon2 RotZ');
 
 
 
@@ -383,14 +413,14 @@ function initScene(){
 
 
 
-        /*if(debugOn){
+        if(debugOn){
 
             var material2 = new THREE.MeshBasicMaterial( {color: 0xffffff, wireframe: true, opacity: 0.05, transparent: true} );
 
             sphere2 = new THREE.Mesh( geometry, material2 );
-        }else{*/
+        }else{
             sphere2 = new THREE.Object3D;
-        //}
+        }
 
         //var moonTexture = THREE.ImageUtils.loadTexture('assets/img/moon1024x512.jpg');
         //var moonNormal = THREE.ImageUtils.loadTexture('assets/img/normal1024x512.jpg');
@@ -423,25 +453,25 @@ function initScene(){
         //    lightDirDebugSphere = new THREE.Object3D;
         //}
 
-        aMeshMirror.add(lightDirDebugSphere);
+        scene.add(lightDirDebugSphere);
 
         //aMeshMirror.add(moonLightDebugSphere);
 
         sphereContainer.add( sphere );
 
-        sphereContainer.add( sphere2 );
+
 
     scene.add(aMeshMirror); //reflections don't work correctly unless aMeshMirror added to scene
-    sphere2.add(cameraContainer);
+    scene.add(cameraContainer);
     //sphereContainer.eulerOrder = 'ZXY'; // change the eulerOrder to lock the rotation around the Y axis
 
     //aMeshMirror.eulerOrder = 'ZXY';
 
-    sphereContainer.eulerOrder = 'ZXY'; // change the eulerOrder to lock the rotation around the Y axis
+    //sphereContainer.eulerOrder = 'ZXY'; // change the eulerOrder to lock the rotation around the Y axis
 
-    aMeshMirror.eulerOrder = 'ZXY';
+    //aMeshMirror.eulerOrder = 'ZXY';
     //sphere.eulerOrder = 'ZXY';
-    scene.add(sphereContainer);
+
 
     aMeshMirror.add(directionalLight); //reflections don't work correctly unless light added to scene
     //scene.add(cameraContainer);
@@ -486,7 +516,7 @@ function initScene(){
         var pointCloudGeometries = new Array(pointCloudCount);
 
         spriteContainer = new THREE.Object3D();
-        scene.add( spriteContainer );
+        skyBox.add(spriteContainer);
 
         for(var k = 0; k < pointCloudCount; k++){
             pointCloudGeometries[k] = new Array(starMagnitudes);
@@ -783,8 +813,8 @@ function initScene(){
         }
 
         if(typeof aMeshMirror !== 'undefined' && aMeshMirror !== null){
-            //aMeshMirror.rotation.set(parameters.rotXFloor * Math.PI / 180,parameters.rotYFloor * Math.PI / 180,parameters.rotZFloor * Math.PI / 180);
-            aMeshMirror.rotation.set(parameters.sphereContainerRotX * Math.PI / 180,parameters.sphereContainerRotY * Math.PI / 180,parameters.sphereContainerRotZ * Math.PI / 180);
+            aMeshMirror.rotation.set(parameters.rotXFloor * Math.PI / 180,parameters.rotYFloor * Math.PI / 180,parameters.rotZFloor * Math.PI / 180);
+            //aMeshMirror.rotation.set(parameters.sphereContainerRotX * Math.PI / 180,parameters.sphereContainerRotY * Math.PI / 180,parameters.sphereContainerRotZ * Math.PI / 180);
 
             /*var position = new THREE.Vector3();
             var quaternion = new THREE.Quaternion();
@@ -816,7 +846,7 @@ function initScene(){
             //aMeshMirror.applyMatrix( new THREE.Matrix4().makeTranslation(parameters.floorOffset,0,0) );
             //aMeshMirror.verticesNeedUpdate = true
 
-            aMeshMirror.position.set(parameters.floorOffset,0,0);
+            aMeshMirror.position.set(0,parameters.floorOffset,0);
             //if(debugOn){
                 sphereContainer.rotation.set(parameters.sphereContainerRotX * Math.PI / 180,parameters.sphereContainerRotY * Math.PI / 180,parameters.sphereContainerRotZ * Math.PI / 180);
                 sphere.rotation.set(parameters.sphereRotX * Math.PI / 180,parameters.sphereRotY * Math.PI / 180,parameters.sphereRotZ * Math.PI / 180);
@@ -827,6 +857,10 @@ function initScene(){
 
         if(typeof skyBox !== 'undefined'){
             skyBox.rotation.set(parameters.skyboxRotX * Math.PI / 180,parameters.skyboxRotY * Math.PI / 180,parameters.skyboxRotZ * Math.PI / 180);
+
+            skyboxContainer.rotation.set(parameters.skyboxContainerRotX * Math.PI / 180,parameters.skyboxContainerRotY * Math.PI / 180,parameters.skyboxContainerRotZ * Math.PI / 180);
+
+            skyboxContainer2.rotation.set(parameters.skyboxContainer2RotX * Math.PI / 180,parameters.skyboxContainer2RotY * Math.PI / 180,parameters.skyboxContainer2RotZ * Math.PI / 180);
         }
 
         if(typeof ms_Water !== 'undefined' && typeof directionalLight !== 'undefined'){
@@ -938,9 +972,11 @@ function loadStarData(){
 
         initScene();
 
+        loadSkyBox();
+
         //initSky();
 
-        loadSkyBox();
+
     });
 }
 
