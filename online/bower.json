@@ -16,6 +16,7 @@
     "tests"
   ],
   "dependencies": {
-    "ocean": "https://github.com/jbouny/ocean.git"
+    "ocean": "https://github.com/jbouny/ocean.git",
+    "modernizr": "~3.3.1"
   }
 }

@@ -5,8 +5,7 @@ import THREE from 'three'
 import 'webvr-polyfill/src/main'
 
 import 'webvr-boilerplate'
-
-import 'dat-gui'
+import dat from 'dat-gui'
 
 import $ from 'jquery'
 
@@ -15,7 +14,17 @@ import './vendor/three/examples/js/effects/VREffect'
 
 import './vendor/charliehoey/GPUParticleSystem'
 
-import  'fpsmeter'
+import 'fpsmeter/dist/fpsmeter'
+
+import 'jquery-modal'
+
+import 'jquery-modal/jquery.modal.css'
+
+//import Modernizr from '../../bower_components/modernizr'
+
+import  MobileDetect from 'mobile-detect'
+
+import './vendor/modernizr/modernizr-custom'
 
 //import './vendor/zz85/SkyShader'
 
@@ -70,6 +79,8 @@ var waterTextureSize = 512;
 var aMeshMirror;
 
 var moonLightDirection = new THREE.Vector3(0,0,0);
+
+
 
 var parameters =
 {
@@ -242,7 +253,7 @@ function loadSkyBox() {
     skyBox.add(sphereContainer);
 
     if(debugOn){
-        var dat = require('dat-gui');
+
 
         var gui = new dat.GUI();
 
@@ -1012,7 +1023,54 @@ function loadStarData(){
 
         //console.log(data);
 
+        var md = new MobileDetect(window.navigator.userAgent);
 
+        console.log('Modernizr: ',Modernizr);
+
+
+        Modernizr.on('testname', function( result ) {
+            if (result) {
+                console.log('The test passed!');
+            }
+            else {
+                console.log('The test failed!');
+            }
+        });
+
+
+        Modernizr.addTest('highres', function() {
+            // for opera
+            var ratio = '2.99/2';
+            // for webkit
+            var num = '1.499';
+            var mqs = [
+                'only screen and (-o-min-device-pixel-ratio:' + ratio + ')',
+                'only screen and (min--moz-device-pixel-ratio:' + num + ')',
+                'only screen and (-webkit-min-device-pixel-ratio:' + num + ')',
+                'only screen and (min-device-pixel-ratio:' + num + ')'
+            ];
+            var isHighRes = false;
+
+            // loop through vendors, checking non-prefixed first
+            for (var i = mqs.length - 1; i >= 0; i--) {
+                isHighRes = Modernizr.mq( mqs[i] );
+                // if found one, return early
+                if ( isHighRes ) {
+                    return isHighRes;
+                }
+            }
+            // not highres
+            return isHighRes;
+        });
+
+        //rendering appears to be partially broken on iOS 8 on latest version of three.js iOS 9 has about 90% market share so we can recommend users update to that version
+
+        $('<div>iOS: '+md.is('iOS')+' iOS Version'+md.versionStr('iOS')+' WebGL support: '+Modernizr.webgl+' deviceMotion: '+Modernizr.devicemotion+' deviceOrientation: '+Modernizr.deviceorientation+' highRes: '+Modernizr.highres+'</div>').modal();
+
+
+        //alert('Mobile grade: '+ md.mobileGrade())
+
+        //alert('Device: '+detector);
 
         initScene();
 
@@ -1026,6 +1084,10 @@ function loadStarData(){
     });
 }
 
-console.log('document is ready')
 
-loadStarData();
+
+$(document).ready(function(){
+    console.log('document is ready')
+    loadStarData();
+});
+
