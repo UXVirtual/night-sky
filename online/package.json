@@ -5,6 +5,7 @@
   "main": "index.js",
   "dependencies": {
     "dat-gui": "^0.5.0",
+    "fpsmeter": "git+https://github.com/darsain/fpsmeter.git#v0.3.1",
     "jquery": "^2.2.1",
     "rollup": "^0.25.4",
     "three": "^0.74.0",
