@@ -134,8 +134,36 @@ var pointClouds = [];
 
 var spriteContainer;
 
+var md = new MobileDetect(window.navigator.userAgent);
+
+var androidVersion = md.versionStr('Android');
+
+var iOSVersion = md.versionStr('iOS')
+
+
+var oldAndroid = (androidVersion !== null && cmpVersions(androidVersion,'5', '.') < 0);
+
+var oldIOS = (iOSVersion !== null && cmpVersions(iOSVersion,'9', '_') < 0);
+
+var slowFPS = false;
+
 //console.log(THREE);
 
+function cmpVersions (a, b, delimeter) {
+    var i, l, diff, segmentsA, segmentsB;
+
+    segmentsA = a.replace(/(\.0+)+$/, '').split(delimeter);
+    segmentsB = b.replace(/(\.0+)+$/, '').split(delimeter);
+    l = Math.min(segmentsA.length, segmentsB.length);
+
+    for (i = 0; i < l; i++) {
+        diff = parseInt(segmentsA[i], 10) - parseInt(segmentsB[i], 10);
+        if (diff !== 0) {
+            return diff;
+        }
+    }
+    return segmentsA.length - segmentsB.length;
+}
 
 function initFPSMeter(){
     // Meter will be attached to `document.body` with all default options.
@@ -317,6 +345,12 @@ function loadSkyBox() {
 
 }
 
+function addBasicGroundPlane(){
+    var geometry = new THREE.PlaneGeometry( 1500, 1500, 1, 1 );
+    var material = new THREE.MeshBasicMaterial( {color: 0x333333, side: THREE.FrontSide} );
+    aMeshMirror = new THREE.Mesh( geometry, material );
+}
+
 function initScene(){
 
     console.log('initializing scene')
@@ -393,11 +427,9 @@ function initScene(){
     directionalLight.position.set(parameters.lightDirX, parameters.lightDirY, parameters.lightDirZ);
 
 
-    /*if(debugOn){
-        var geometry = new THREE.PlaneGeometry( 1500, 1500, 10, 10 );
-        var material = new THREE.MeshBasicMaterial( {color: 0xffff00, side: THREE.DoubleSide, wireframe: true} );
-        aMeshMirror = new THREE.Mesh( geometry, material );
-    }else{*/
+    if(oldAndroid || oldIOS){
+        addBasicGroundPlane();
+    }else{
         // Load textures
         var waterNormals = new THREE.ImageUtils.loadTexture('assets/img/waternormals.jpg');
         waterNormals.wrapS = waterNormals.wrapT = THREE.RepeatWrapping;
@@ -431,7 +463,7 @@ function initScene(){
 
 
         //ms_Water.render();
-    //}
+    }
 
 
 
@@ -1023,7 +1055,7 @@ function loadStarData(){
 
         //console.log(data);
 
-        var md = new MobileDetect(window.navigator.userAgent);
+
 
         console.log('Modernizr: ',Modernizr);
 
@@ -1065,7 +1097,9 @@ function loadStarData(){
 
         //rendering appears to be partially broken on iOS 8 on latest version of three.js iOS 9 has about 90% market share so we can recommend users update to that version
 
-        $('<div>iOS: '+md.is('iOS')+' iOS Version'+md.versionStr('iOS')+' WebGL support: '+Modernizr.webgl+' deviceMotion: '+Modernizr.devicemotion+' deviceOrientation: '+Modernizr.deviceorientation+' highRes: '+Modernizr.highres+'</div>').modal();
+
+
+        $('<div>iOS: '+md.is('iOS')+' iOS Version '+md.versionStr('iOS')+' Android: '+md.is('Android')+' Android Version '+md.versionStr('Android')+' Old Android: '+oldAndroid+' Old iOS: '+oldIOS+' WebGL support: '+Modernizr.webgl+' deviceMotion: '+Modernizr.devicemotion+' deviceOrientation: '+Modernizr.deviceorientation+' highRes: '+Modernizr.highres+'</div>').modal();
 
 
         //alert('Mobile grade: '+ md.mobileGrade())
@@ -1077,6 +1111,16 @@ function loadStarData(){
         loadSkyBox();
 
         initFPSMeter();
+
+        setTimeout(function(){
+            if(meter.fps < 30){
+                scene.remove(aMeshMirror);
+                addBasicGroundPlane();
+                scene.add(aMeshMirror);
+            }
+        },5000)
+
+
 
         //initSky();
 
