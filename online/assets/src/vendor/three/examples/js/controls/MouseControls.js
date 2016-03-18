@@ -23,8 +23,8 @@ THREE.MouseControls = function ( object, domElement ) {
         y: new THREE.Quaternion()
     };
     var object = object;
-    var xVector = (Util.isIOS()) ? new THREE.Vector3( 0, 0, 1 ) : new THREE.Vector3( 1, 0, 0 ); //on IOS we have to invert the X axis, so we need to correct it here otherwise it will show up as a Z rotation
-    var yVector = new THREE.Vector3( 0, 1, 0 );
+    //var xVector = (Util.isIOS()) ? new THREE.Vector3( 0, 0, 1 ) : new THREE.Vector3( 1, 0, 0 ); //on IOS we have to invert the X axis, so we need to correct it here otherwise it will show up as a Z rotation
+    //var yVector = new THREE.Vector3( 0, 1, 0 );
 
     var rotateStart = new THREE.Vector2();
     var rotateEnd = new THREE.Vector2();
@@ -285,8 +285,15 @@ THREE.MouseControls = function ( object, domElement ) {
 
         if ( scope.enabled === false ) return;
 
-        mouseQuat.x.setFromAxisAngle( xVector, scope.orientation.x );
-        mouseQuat.y.setFromAxisAngle( yVector, scope.orientation.y );
+        //TODO: fix this so that rotation is corrected when the parent rotation changes. Currently X and Z axis flip
+        //when the dollyCamera is rotated in a different direction using the gyro
+
+        mouseQuat.x.setFromEuler(new THREE.Euler(scope.orientation.x, 0, 0));
+
+        mouseQuat.y.setFromEuler(new THREE.Euler(0, scope.orientation.y, 0));
+
+        //mouseQuat.x.setFromAxisAngle( xVector, scope.orientation.x );
+        //mouseQuat.y.setFromAxisAngle( yVector, scope.orientation.y );
         object.quaternion.copy( mouseQuat.y ).multiply( mouseQuat.x );
         return;
 
