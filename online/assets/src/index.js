@@ -2,18 +2,19 @@ import { SpriteText2D, textAlign } from 'three-text2d'
 
 //import THREE from 'three' //dont need to explicitly import THREE in here as we are already injecting it globally in webpack.config
 
+import './config/WebVRConfig'
+
 import 'webvr-polyfill/src/main'
 
 import 'webvr-boilerplate'
 import dat from 'dat-gui'
 
-import $ from 'jquery'
+//import $ from 'jquery' //dont need to explicitly import jQuery in here as we are already injecting it globally in webpack.config
 
-//import 'three-orbit-controls'
+import './vendor/three/examples/js/controls/MouseControls'
+//import 'three/examples/js/controls/MouseControls'
 
-import 'three/examples/js/controls/OrbitControls'
-//import './vendor/three/examples/js/controls/FirstPersonControls'
-//import './vendor/three/examples/js/controls/PointerLockControls'
+//import 'three/examples/js/controls/TrackballControls'
 import 'three/examples/js/controls/VRControls'
 import 'three/examples/js/effects/VREffect'
 
@@ -25,9 +26,7 @@ import 'jquery-modal'
 
 import 'jquery-modal/jquery.modal.css'
 
-//import Modernizr from '../../bower_components/modernizr'
-
-import  MobileDetect from 'mobile-detect'
+import MobileDetect from 'mobile-detect'
 
 import 'perfnow'
 
@@ -35,44 +34,9 @@ import Stats from 'stats.js'
 
 import './vendor/modernizr/modernizr-custom'
 
-//import './vendor/zz85/SkyShader'
-
-//import './vendor/CoryG89/MoonShader'
-
 import '../../bower_components/ocean/water-material.js'
 
-WebVRConfig = {
-    /**
-     * webvr-polyfill configuration
-     */
 
-    // Forces availability of VR mode.
-    FORCE_ENABLE_VR: false, // Default: false.
-    // Complementary filter coefficient. 0 for accelerometer, 1 for gyro.
-    K_FILTER: 0.98, // Default: 0.98.
-    // How far into the future to predict during fast motion.
-    PREDICTION_TIME_S: 0.040, // Default: 0.040 (in seconds).
-    // Flag to disable touch panner. In case you have your own touch controls
-    TOUCH_PANNER_DISABLED: true, // Default: false.
-    // Enable yaw panning only, disabling roll and pitch. This can be useful for
-    // panoramas with nothing interesting above or below.
-    YAW_ONLY: false, // Default: false.
-    MOUSE_KEYBOARD_CONTROLS_DISABLED: true,
-
-    /**
-     * webvr-boilerplate configuration
-     */
-    // Forces distortion in VR mode.
-    FORCE_DISTORTION: false, // Default: false.
-    // Override the distortion background color.
-    // DISTORTION_BGCOLOR: {x: 1, y: 0, z: 0, w: 1}, // Default: (0,0,0,1).
-    // Prevent distortion from happening.
-    PREVENT_DISTORTION: false, // Default: false.
-    // Show eye centers for debugging.
-    SHOW_EYE_CENTERS: false, // Default: false.
-    // Prevent the online DPDB from being fetched.
-    NO_DPDB_FETCH: true  // Default: false.
-};
 
 var sky, sphere, sphere2, moonLightDirection, moonLightDebugSphere, sphereContainer, lightDirDebugSphere, cameraContainer, skyboxContainer, skyboxContainer2, scene, renderer, camera, dollyCam;
 var lastCameraX, lastCameraY, lastCameraZ;
@@ -90,7 +54,7 @@ var aMeshMirror;
 
 var moonLightDirection = new THREE.Vector3(0,0,0);
 
-var controls, orbitControls;
+var controls, dollyControls;
 
 
 
@@ -475,8 +439,17 @@ function initScene(){
 
     controls = new THREE.VRControls(camera);
 
-    orbitControls = new THREE.OrbitControls(dollyCam);
+    dollyControls = new THREE.MouseControls(dollyCam);
 
+    //dollyControls.movementSpeed = 0.1;
+    //dollyControls.lookSpeed = 0.001;
+    //dollyControls.lookVertical = true;
+
+    //trackballControls.rotateSpeed = 5;
+    //trackballControls.noZoom = true;
+    //trackballControls.noPan = true;
+    //trackballControls.staticMoving = true;
+    //orbitControls.enableDamping = true;
     //orbitControls.enableZoom = false;
     //orbitControls.enablePan = false;
     //orbitControls.enableRotate = true;
@@ -941,7 +914,9 @@ function initScene(){
 
     // Request animation frame loop function
     var lastRender = 0;
-    function animate(timestamp,skipRenderCheck) {
+    function animate(timestamp) {
+
+        requestAnimationFrame(animate);
 
         if(typeof meter !== 'undefined'){
             meter.tickStart();
@@ -972,12 +947,18 @@ function initScene(){
 
         // Update VR headset position and apply to camera.
 
-        if(typeof controls !== 'undefined' && typeof orbitControls !== 'undefined'){
+        if(typeof controls !== 'undefined' && typeof dollyControls !== 'undefined'){
+
+
+
+
+            //console.log('Update function: ',orbitControls.update)
 
             controls.update();
-            orbitControls.update();
-            console.log('Camera dolly: ',dollyCam.rotation.x,dollyCam.rotation.y,dollyCam.rotation.z);
-            console.log('Camera: ',camera.rotation.x,camera.rotation.y,camera.rotation.z);
+            dollyControls.update();
+
+            ////console.log('Camera dolly: ',dollyCam.rotation.x,dollyCam.rotation.y,dollyCam.rotation.z);
+            //console.log('Camera: ',camera.rotation.x,camera.rotation.y,camera.rotation.z);
             //orbitControls.update();
         }
 
@@ -1091,7 +1072,7 @@ function initScene(){
             stats.end();
         }
 
-        requestAnimationFrame(animate);
+
 
 
 
