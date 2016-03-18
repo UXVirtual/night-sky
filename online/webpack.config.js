@@ -38,6 +38,9 @@ module.exports = {
             $: "jquery",
             jQuery: "jquery",
             "window.jQuery": "jquery"
+        }),
+        new webpack.ProvidePlugin({
+            'performance': 'imports?this=>global!exports?global.performance!perfnow'
         })
     ]
 };

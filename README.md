@@ -28,6 +28,17 @@ Google Cardboard apps. One of the contributors is the a main developer at AltSpa
 *   On iOS Download and install WebView from the iOS app store. Enter the desired URL into the WKWebView tab to simulate
     running the app in the WebView accessible in Cordova.
     
+### Debugging Chrome on Android
+
+See https://developers.google.com/web/tools/chrome-devtools/debug/remote-debugging/remote-debugging for instructions
+on remote debugging via desktop Chrome. This will work with Android 4.0 or higher.
+   
+## Gotchas
+
+*   In the future on mobile Chrome, `devicemotion` event will be removed for insecure origins, meaning the page must
+    run on https to allow gyroscope access. We may need to find a way to directly pipe gyroscope data into the app when
+    running it in a webview.
+    
 ## Star Data
 
 1. To generate star data in the `online/assets/data/data.json` file run the following command from the `scripts` folder:
@@ -106,3 +117,4 @@ full list of the updated column names, see the official database documentation o
 *   [Scientific Visualization Studio](http://svs.gsfc.nasa.gov/cgi-bin/details.cgi?aid=3895)
 *   [Planetary Annihilation Skyboxes](http://www.superouman.net/planetary-annihilation-skyboxes.php)
 *   [How to Find the Milky Way](http://www.lonelyspeck.com/how-to-find-the-milky-way/)
+*   [THREE.js VRControls Integration How To Move In The Scene](http://stackoverflow.com/questions/30511524/three-js-vrcontrols-integration-how-to-move-in-the-scene)

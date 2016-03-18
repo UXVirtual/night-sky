@@ -1,6 +1,6 @@
 import { SpriteText2D, textAlign } from 'three-text2d'
 
-import THREE from 'three'
+//import THREE from 'three' //dont need to explicitly import THREE in here as we are already injecting it globally in webpack.config
 
 import 'webvr-polyfill/src/main'
 
@@ -9,8 +9,13 @@ import dat from 'dat-gui'
 
 import $ from 'jquery'
 
-import './vendor/three/examples/js/controls/VRControls'
-import './vendor/three/examples/js/effects/VREffect'
+//import 'three-orbit-controls'
+
+import 'three/examples/js/controls/OrbitControls'
+//import './vendor/three/examples/js/controls/FirstPersonControls'
+//import './vendor/three/examples/js/controls/PointerLockControls'
+import 'three/examples/js/controls/VRControls'
+import 'three/examples/js/effects/VREffect'
 
 import './vendor/charliehoey/GPUParticleSystem'
 
@@ -23,6 +28,10 @@ import 'jquery-modal/jquery.modal.css'
 //import Modernizr from '../../bower_components/modernizr'
 
 import  MobileDetect from 'mobile-detect'
+
+import 'perfnow'
+
+import Stats from 'stats.js'
 
 import './vendor/modernizr/modernizr-custom'
 
@@ -40,14 +49,15 @@ WebVRConfig = {
     // Forces availability of VR mode.
     FORCE_ENABLE_VR: false, // Default: false.
     // Complementary filter coefficient. 0 for accelerometer, 1 for gyro.
-    K_FILTER: 1, // Default: 0.98.
+    K_FILTER: 0.98, // Default: 0.98.
     // How far into the future to predict during fast motion.
-    PREDICTION_TIME_S: 1, // Default: 0.040 (in seconds).
+    PREDICTION_TIME_S: 0.040, // Default: 0.040 (in seconds).
     // Flag to disable touch panner. In case you have your own touch controls
-    TOUCH_PANNER_DISABLED: false, // Default: false.
+    TOUCH_PANNER_DISABLED: true, // Default: false.
     // Enable yaw panning only, disabling roll and pitch. This can be useful for
     // panoramas with nothing interesting above or below.
-    //YAW_ONLY: true, // Default: false.
+    YAW_ONLY: false, // Default: false.
+    MOUSE_KEYBOARD_CONTROLS_DISABLED: true,
 
     /**
      * webvr-boilerplate configuration
@@ -64,12 +74,12 @@ WebVRConfig = {
     NO_DPDB_FETCH: true  // Default: false.
 };
 
-var sky, sphere, sphere2, moonLightDirection, moonLightDebugSphere, sphereContainer, lightDirDebugSphere, cameraContainer, skyboxContainer, skyboxContainer2, scene, renderer, camera;
+var sky, sphere, sphere2, moonLightDirection, moonLightDebugSphere, sphereContainer, lightDirDebugSphere, cameraContainer, skyboxContainer, skyboxContainer2, scene, renderer, camera, dollyCam;
 var lastCameraX, lastCameraY, lastCameraZ;
 var starData;
 var ms_Water;
 var skyBox;
-var meter;
+var meter, stats;
 var cameraFOV = 45;
 
 var moonScale = 15;
@@ -79,6 +89,8 @@ var waterTextureSize = 512;
 var aMeshMirror;
 
 var moonLightDirection = new THREE.Vector3(0,0,0);
+
+var controls, orbitControls;
 
 
 
@@ -147,7 +159,56 @@ var oldIOS = (iOSVersion !== null && cmpVersions(iOSVersion,'9', '_') < 0);
 
 var slowFPS = false;
 
+var canHandleOrientation = false;
+
+
+
 //console.log(THREE);
+
+(function() {
+
+    var originalGetExtensionFunction = WebGLRenderingContext.prototype.getExtension;
+
+    // start with this array empty. Once you know which extensions
+    // the app is requesting you can then selectively add them here
+    // to figure out which ones are required.
+    var extensionToReject = [
+        "OES_texture_float",
+        "OES_texture_float_linear",
+    ];
+
+    WebGLRenderingContext.prototype.getExtension = function() {
+        var name = arguments[0];
+        console.log("app requested extension: " + name);
+        if (extensionToReject.indexOf(name) >= 0) {
+            console.log("rejected extension: " + name);
+            return null;
+        }
+        var ext = originalGetExtensionFunction.apply(this, arguments);
+        console.log("extension " + name + " " + (ext ? "found" : "not found"));
+        return ext;
+    };
+
+}());
+
+window.addEventListener("compassneedscalibration", function(event) {
+    console.log('Compass needs calibration');
+    $('<div>Your compass needs calibration on your device. Please calibrate it before continuing.</div>').modal();
+}, true);
+
+
+
+function checkCanHandleOrientation(){
+
+    if (window.DeviceOrientationEvent) {
+        window.addEventListener("deviceorientation", handleOrientation, false);
+    }
+
+    function handleOrientation(event){
+        //console.log("Orientation:" + event.alpha + ", " + event.beta + ", " + event.gamma);
+        canHandleOrientation = (event !== null); // event will be either null or with event data
+    }
+}
 
 function cmpVersions (a, b, delimeter) {
     var i, l, diff, segmentsA, segmentsB;
@@ -193,11 +254,22 @@ function initFPSMeter(){
         graph:   1, // Whether to show history graph.
         history: 20 // How many history states to show in a graph.
     });
+
+    /*stats = new Stats();
+    stats.setMode( 0 ); // 0: fps, 1: ms, 2: mb
+
+    stats.domElement.style.position = 'absolute';
+    stats.domElement.style.left = '0px';
+    stats.domElement.style.top = '0px';
+
+    document.body.appendChild( stats.domElement );*/
+
     //meter.showDuration();
 }
 
 function loadSkyBox() {
-    var path = "assets/img/";
+    //var path = (oldAndroid || oldIOS) ? "assets/img/skybox3-lr/" : "assets/img/skybox3-hr/";
+    var path = "assets/img/skybox3-hr/";
     var format = '.png';
     var urls = [
         path + 'skybox_0' + format, path + 'skybox_1' + format,
@@ -254,7 +326,7 @@ function loadSkyBox() {
     var materialArray = [];
     for (var i = 0; i < 6; i++)
         materialArray.push( new THREE.MeshBasicMaterial({
-            map: THREE.ImageUtils.loadTexture( urls[i] ),
+            map: /*THREE.ImageUtils.loadTexture( urls[i] )*/new THREE.TextureLoader().load(urls[i]),
             side: THREE.BackSide
         }));
     var skyMaterial = new THREE.MeshFaceMaterial( materialArray );
@@ -347,7 +419,7 @@ function loadSkyBox() {
 
 function addBasicGroundPlane(){
     var geometry = new THREE.PlaneGeometry( 1500, 1500, 1, 1 );
-    var material = new THREE.MeshBasicMaterial( {color: 0x333333, side: THREE.FrontSide} );
+    var material = new THREE.MeshBasicMaterial( {color: 0x181818, side: THREE.FrontSide} );
     aMeshMirror = new THREE.Mesh( geometry, material );
 }
 
@@ -385,8 +457,12 @@ function initScene(){
 
 // Create a three.js camera.
     camera = new THREE.PerspectiveCamera(cameraFOV, window.innerWidth / window.innerHeight, 0.1, 2000000);
+    dollyCam = new THREE.PerspectiveCamera();
 
-    cameraContainer.add(camera);
+    dollyCam.add(camera);
+
+    cameraContainer.add(dollyCam);
+
 
 
     //cameraContainer.rotation.x = 90 * Math.PI / 180;
@@ -396,7 +472,14 @@ function initScene(){
     //lastCameraZ = camera.rotation.z;
 
 // Apply VR headset positional data to camera.
-    var controls = new THREE.VRControls(camera);
+
+    controls = new THREE.VRControls(camera);
+
+    orbitControls = new THREE.OrbitControls(dollyCam);
+
+    //orbitControls.enableZoom = false;
+    //orbitControls.enablePan = false;
+    //orbitControls.enableRotate = true;
 
     //camera.addEventListener( 'change', render );
 
@@ -431,7 +514,7 @@ function initScene(){
         addBasicGroundPlane();
     }else{
         // Load textures
-        var waterNormals = new THREE.ImageUtils.loadTexture('assets/img/waternormals.jpg');
+        var waterNormals = /*new THREE.ImageUtils.loadTexture('assets/img/waternormals.jpg')*/ new THREE.TextureLoader().load('assets/img/waternormals.jpg');
         waterNormals.wrapS = waterNormals.wrapT = THREE.RepeatWrapping;
 
 
@@ -464,6 +547,9 @@ function initScene(){
 
         //ms_Water.render();
     }
+
+    //$('<div>'+aMeshMirror.toString()+'</div>').modal();
+
 
 
 
@@ -500,9 +586,9 @@ function initScene(){
         //var moonTexture = THREE.ImageUtils.loadTexture('assets/img/moon1024x512.jpg');
         //var moonNormal = THREE.ImageUtils.loadTexture('assets/img/normal1024x512.jpg');
 
-        var material3 = new THREE.MeshBasicMaterial( {color: 0xffffffff, wireframe: false, opacity: 1, transparent: false/*, map: moonTexture*/} );
+        var moonMaterial = new THREE.MeshBasicMaterial( {color: 0xffffff, wireframe: false, opacity: 1, transparent: false/*, map: moonTexture*/} );
 
-        moonLightDebugSphere = new THREE.Mesh( geometry, material3 );
+        moonLightDebugSphere = new THREE.Mesh( geometry, moonMaterial );
 
         console.log(moonLightDebugSphere);
 
@@ -517,7 +603,7 @@ function initScene(){
 
         //lightDirDebugSphere = moon.mesh;
 
-        lightDirDebugSphere = new THREE.Mesh( geometry, material3 );
+        lightDirDebugSphere = new THREE.Mesh( geometry, moonMaterial );
 
         //if(debugOn){
             lightDirDebugSphere.position.set(parameters.lightDirX,parameters.lightDirY,parameters.lightDirZ);
@@ -861,18 +947,40 @@ function initScene(){
             meter.tickStart();
         }
 
+        if(typeof stats !== 'undefined'){
+            stats.begin();
+        }
+
 
 
         //var delta = Math.min(timestamp - lastRender, 500);
         lastRender = timestamp;
 
-        //if(!debugOn){
-            ms_Water.material.uniforms.time.value += 1.0 / 60.0;
-            ms_Water.render();
-        //}
+        //dont render water if it doesnt exist
+        if(typeof ms_Water !== 'undefined'){
+
+            if(ms_Water !== null){
+                //if(!debugOn){
+                ms_Water.material.uniforms.time.value += 1.0 / 60.0;
+                ms_Water.render();
+                //}
+            }
+
+        }
+
+
 
         // Update VR headset position and apply to camera.
-        controls.update();
+
+        if(typeof controls !== 'undefined' && typeof orbitControls !== 'undefined'){
+
+            controls.update();
+            orbitControls.update();
+            console.log('Camera dolly: ',dollyCam.rotation.x,dollyCam.rotation.y,dollyCam.rotation.z);
+            console.log('Camera: ',camera.rotation.x,camera.rotation.y,camera.rotation.z);
+            //orbitControls.update();
+        }
+
 
 
         for(var i = 0; i < pointClouds.length; i++){
@@ -973,13 +1081,19 @@ function initScene(){
 
         //}
 
-        requestAnimationFrame(animate);
-
         if(typeof meter !== 'undefined') {
 
             meter.tick();
 
         }
+
+        if(typeof stats !== 'undefined'){
+            stats.end();
+        }
+
+        requestAnimationFrame(animate);
+
+
 
     }
 
@@ -997,7 +1111,7 @@ function initScene(){
 
 // Reset the position sensor when 'z' pressed.
     function onKey(event) {
-        if (event.keyCode == 90) { // z
+        if (typeof controls !== 'undefined' && event.keyCode == 90) { // z
             controls.resetSensor();
         }
     }
@@ -1098,13 +1212,33 @@ function loadStarData(){
         //rendering appears to be partially broken on iOS 8 on latest version of three.js iOS 9 has about 90% market share so we can recommend users update to that version
 
 
+        //TODO: add three-orbit-controls library to allow mouse controls to be used by default on devices that don't support motion controls
 
-        $('<div>iOS: '+md.is('iOS')+' iOS Version '+md.versionStr('iOS')+' Android: '+md.is('Android')+' Android Version '+md.versionStr('Android')+' Old Android: '+oldAndroid+' Old iOS: '+oldIOS+' WebGL support: '+Modernizr.webgl+' deviceMotion: '+Modernizr.devicemotion+' deviceOrientation: '+Modernizr.deviceorientation+' highRes: '+Modernizr.highres+'</div>').modal();
+        //TODO: move these checks out into a first-run function along with the FPS test to determin if device is capable of running the experience.
+        //Magnometer should be optional as it is only required to get the correct orientation, but user should be warned that their direction won't be accurate
+        setTimeout(function(){
+
+
+
+
+
+            /*if(canHandleOrientation){
+                controls = new THREE.VRControls(camera);
+            }else{*/
+                //controls = THREE.FirstPersonControls(camera);
+                //controls = THREE.PointerLockControls(camera);
+            //}
+
+            $('<div>iOS: '+md.is('iOS')+' iOS Version '+md.versionStr('iOS')+' Android: '+md.is('Android')+' Android Version '+md.versionStr('Android')+' Old Android: '+oldAndroid+' Old iOS: '+oldIOS+' WebGL support: '+Modernizr.webgl+' deviceMotion: '+Modernizr.devicemotion+' deviceOrientation: '+Modernizr.deviceorientation+' deviceOrientation (actual): '+canHandleOrientation+' WebGL Extensions: '+Modernizr.webglextensions+' Geolocation: '+Modernizr.geolocation+' highRes: '+Modernizr.highres+'</div>').modal();
+        },5000);
+
 
 
         //alert('Mobile grade: '+ md.mobileGrade())
 
         //alert('Device: '+detector);
+
+        checkCanHandleOrientation();
 
         initScene();
 
@@ -1115,10 +1249,16 @@ function loadStarData(){
         setTimeout(function(){
             if(meter.fps < 30){
                 scene.remove(aMeshMirror);
+                if(typeof ms_Water !== 'undefined'){
+                    //ms_Water.dispose();
+
+                    console.log('Water material: ',ms_Water);
+                }
+
                 addBasicGroundPlane();
                 scene.add(aMeshMirror);
             }
-        },5000)
+        },5000);
 
 
 
@@ -1131,6 +1271,18 @@ function loadStarData(){
 
 
 $(document).ready(function(){
+
+    /*document.addEventListener('touchstart', this.touchstart);
+    document.addEventListener('touchmove', this.touchmove);
+
+    function touchstart(e) {
+        e.preventDefault()
+    }
+
+    function touchmove(e) {
+        e.preventDefault()
+    }*/
+
     console.log('document is ready')
     loadStarData();
 });
