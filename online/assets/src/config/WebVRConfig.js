@@ -10,11 +10,11 @@ window.WebVRConfig = {
     // How far into the future to predict during fast motion.
     PREDICTION_TIME_S: 0.040, // Default: 0.040 (in seconds).
     // Flag to disable touch panner. In case you have your own touch controls
-    TOUCH_PANNER_DISABLED: true, // Default: false.
+    TOUCH_PANNER_DISABLED: false, // Default: false.
     // Enable yaw panning only, disabling roll and pitch. This can be useful for
     // panoramas with nothing interesting above or below.
     YAW_ONLY: false, // Default: false.
-    MOUSE_KEYBOARD_CONTROLS_DISABLED: true,
+    MOUSE_KEYBOARD_CONTROLS_DISABLED: false,
 
 /**
  * webvr-boilerplate configuration

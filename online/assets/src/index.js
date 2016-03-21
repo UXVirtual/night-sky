@@ -56,6 +56,8 @@ var moonLightDirection = new THREE.Vector3(0,0,0);
 
 var controls, dollyControls;
 
+var spriteCount = 0;
+
 
 
 var parameters =
@@ -143,21 +145,21 @@ var canHandleOrientation = false;
 
     WebGLRenderingContext.prototype.getExtension = function() {
         var name = arguments[0];
-        console.log("app requested extension: " + name);
+        //console.log("app requested extension: " + name);
         if (extensionToReject.indexOf(name) >= 0) {
-            console.log("rejected extension: " + name);
+            //console.log("rejected extension: " + name);
             return null;
         }
         var ext = originalGetExtensionFunction.apply(this, arguments);
-        console.log("extension " + name + " " + (ext ? "found" : "not found"));
+        //console.log("extension " + name + " " + (ext ? "found" : "not found"));
         return ext;
     };
 
 }());
 
 window.addEventListener("compassneedscalibration", function(event) {
-    console.log('Compass needs calibration');
-    $('<div>Your compass needs calibration on your device. Please calibrate it before continuing.</div>').modal();
+    //console.log('Compass needs calibration');
+    //$('<div>Your compass needs calibration on your device. Please calibrate it before continuing.</div>').modal();
 }, true);
 
 
@@ -389,7 +391,7 @@ function addBasicGroundPlane(){
 
 function initScene(){
 
-    console.log('initializing scene')
+    //console.log('initializing scene')
 
     // Setup three.js WebGL renderer. Note: Antialiasing is a big performance hit.
 // Only enable it if you actually need to.
@@ -427,34 +429,12 @@ function initScene(){
 
     cameraContainer.add(dollyCam);
 
-
-
-    //cameraContainer.rotation.x = 90 * Math.PI / 180;
-
-    //lastCameraX = camera.rotation.x;
-    //lastCameraY = camera.rotation.y;
-    //lastCameraZ = camera.rotation.z;
-
 // Apply VR headset positional data to camera.
 
     controls = new THREE.VRControls(camera);
 
-    dollyControls = new THREE.MouseControls(dollyCam);
+    //dollyControls = new THREE.MouseControls(dollyCam);
 
-    //dollyControls.movementSpeed = 0.1;
-    //dollyControls.lookSpeed = 0.001;
-    //dollyControls.lookVertical = true;
-
-    //trackballControls.rotateSpeed = 5;
-    //trackballControls.noZoom = true;
-    //trackballControls.noPan = true;
-    //trackballControls.staticMoving = true;
-    //orbitControls.enableDamping = true;
-    //orbitControls.enableZoom = false;
-    //orbitControls.enablePan = false;
-    //orbitControls.enableRotate = true;
-
-    //camera.addEventListener( 'change', render );
 
 // Apply VR stereo rendering to renderer.
     var effect = new THREE.VREffect(renderer);
@@ -514,7 +494,7 @@ function initScene(){
 
         aMeshMirror.add(ms_Water);
 
-        console.log('Meshmirror: ',aMeshMirror);
+        //console.log('Meshmirror: ',aMeshMirror);
 
 
 
@@ -563,7 +543,7 @@ function initScene(){
 
         moonLightDebugSphere = new THREE.Mesh( geometry, moonMaterial );
 
-        console.log(moonLightDebugSphere);
+        //console.log(moonLightDebugSphere);
 
         moonLightDebugSphere.position.set(parameters.moonLightDirX,parameters.moonLightDirY,parameters.moonLightDirZ);
 
@@ -678,9 +658,10 @@ function initScene(){
             var doInsertPoint = true;
             var doInsertSprite = false;
 
+            var starLabel = (starData.proper[l] !== null) ? starData.proper[l] : (starData.bf[l] !== null) ? starData.bf[l] : (starData.gl[l] !== null) ? starData.gl[l] : null;
 
 
-            if(starData.proper[l] !== null && starData.mag[l] < 16 || (starData.proper[l] === "Sol" || starData.mag[l] < 3)/* || starData.proper[l] === "Rigil Kentaurus" || starData.proper[l] === "Hadar"*/){
+            if(starLabel !== null && starData.mag[l] < 4 /* || starData.proper[l] === "Rigil Kentaurus" || starData.proper[l] === "Hadar"*/){
 
                 //doInsertPoint = false;
 
@@ -699,11 +680,10 @@ function initScene(){
                     doInsertPoint = false;
                 }*/
 
-                if(doInsertSprite && (starData.proper[l] !== null || starData.bf[l] !== null || starData.gl[l] !== null)){
+                //if(doInsertSprite && (starData.proper[l] !== null || starData.bf[l] !== null || starData.gl[l] !== null)){
 
                     if(debugOn){
 
-                        var starLabel = (starData.proper[l] !== null) ? starData.proper[l] : (starData.bf[l] !== null) ? starData.bf[l] : (starData.gl[l] !== null) ? starData.gl[l] : null;
 
                         if(starLabel !== null){
                             var sprite = new SpriteText2D(starLabel, { align: new THREE.Vector2(0, 0),  font: '10px Arial', fillStyle: '#ffffff' , antialias: false })
@@ -716,7 +696,7 @@ function initScene(){
 
 
                     }
-                }
+                //}
 
 
 
@@ -825,6 +805,8 @@ function initScene(){
             if(doInsertSprite && doInsertPoint){
                 var material = new THREE.SpriteMaterial( { map: texture, color: 0xffffff, fog: false, depthTest: true/*(starMagnitudes-starData.mag[l]+1)*/ } );
 
+                spriteCount++;
+
                 //console.log(material);
 
                 var sprite = new THREE.Sprite( material );
@@ -843,6 +825,8 @@ function initScene(){
 
 
         }
+
+        console.log("Stars generated: ",spriteCount);
 
 
         for(var j = 0; j < pointCloudCount; j++){
@@ -947,19 +931,11 @@ function initScene(){
 
         // Update VR headset position and apply to camera.
 
-        if(typeof controls !== 'undefined' && typeof dollyControls !== 'undefined'){
-
-
-
-
-            //console.log('Update function: ',orbitControls.update)
+        if(typeof controls !== 'undefined'/* && typeof dollyControls !== 'undefined'*/){
 
             controls.update();
-            dollyControls.update();
+            //dollyControls.update();
 
-            ////console.log('Camera dolly: ',dollyCam.rotation.x,dollyCam.rotation.y,dollyCam.rotation.z);
-            //console.log('Camera: ',camera.rotation.x,camera.rotation.y,camera.rotation.z);
-            //orbitControls.update();
         }
 
 
@@ -1103,7 +1079,7 @@ function initScene(){
 
 function loadStarData(){
 
-    console.log('Getting star data...')
+    //console.log('Getting star data...')
 
     $.getJSON( 'assets/data/data.json.gz', {}, function(data){
 
@@ -1146,23 +1122,23 @@ function loadStarData(){
             i++;
         }
 
-        console.log('Star data loaded.');
+       // console.log('Star data loaded.');
 
         //console.log(data);
 
 
 
-        console.log('Modernizr: ',Modernizr);
+        //console.log('Modernizr: ',Modernizr);
 
 
-        Modernizr.on('testname', function( result ) {
+        /*Modernizr.on('testname', function( result ) {
             if (result) {
-                console.log('The test passed!');
+                //console.log('The test passed!');
             }
             else {
-                console.log('The test failed!');
+                //console.log('The test failed!');
             }
-        });
+        });*/
 
 
         Modernizr.addTest('highres', function() {
@@ -1198,19 +1174,7 @@ function loadStarData(){
         //TODO: move these checks out into a first-run function along with the FPS test to determin if device is capable of running the experience.
         //Magnometer should be optional as it is only required to get the correct orientation, but user should be warned that their direction won't be accurate
         setTimeout(function(){
-
-
-
-
-
-            /*if(canHandleOrientation){
-                controls = new THREE.VRControls(camera);
-            }else{*/
-                //controls = THREE.FirstPersonControls(camera);
-                //controls = THREE.PointerLockControls(camera);
-            //}
-
-            $('<div>iOS: '+md.is('iOS')+' iOS Version '+md.versionStr('iOS')+' Android: '+md.is('Android')+' Android Version '+md.versionStr('Android')+' Old Android: '+oldAndroid+' Old iOS: '+oldIOS+' WebGL support: '+Modernizr.webgl+' deviceMotion: '+Modernizr.devicemotion+' deviceOrientation: '+Modernizr.deviceorientation+' deviceOrientation (actual): '+canHandleOrientation+' WebGL Extensions: '+Modernizr.webglextensions+' Geolocation: '+Modernizr.geolocation+' highRes: '+Modernizr.highres+'</div>').modal();
+            //$('<div>iOS: '+md.is('iOS')+' iOS Version '+md.versionStr('iOS')+' Android: '+md.is('Android')+' Android Version '+md.versionStr('Android')+' Old Android: '+oldAndroid+' Old iOS: '+oldIOS+' WebGL support: '+Modernizr.webgl+' deviceMotion: '+Modernizr.devicemotion+' deviceOrientation: '+Modernizr.deviceorientation+' deviceOrientation (actual): '+canHandleOrientation+' WebGL Extensions: '+Modernizr.webglextensions+' Geolocation: '+Modernizr.geolocation+' highRes: '+Modernizr.highres+'</div>').modal();
         },5000);
 
 
@@ -1233,7 +1197,7 @@ function loadStarData(){
                 if(typeof ms_Water !== 'undefined'){
                     //ms_Water.dispose();
 
-                    console.log('Water material: ',ms_Water);
+                    //console.log('Water material: ',ms_Water);
                 }
 
                 addBasicGroundPlane();
@@ -1264,7 +1228,7 @@ $(document).ready(function(){
         e.preventDefault()
     }*/
 
-    console.log('document is ready')
+    //console.log('document is ready')
     loadStarData();
 });
 
