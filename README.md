@@ -6,13 +6,15 @@ mobile application for an upcoming campaign in 2016. This framework was chosen d
 and superior performance. It can also be used as the basis for Google Cardboard apps. One of the contributors is the a 
 main developer at AltSpaceVR.
 
-This application loads in real star position data from the [The HYG Database](https://github.com/astronexus/HYG-Database).
+This application loads in real star position data as seen from Earth from the [The HYG Database](https://github.com/astronexus/HYG-Database).
 
 It is viewable both in the browser and on mobile devices. Works best with:
 
 *   Chrome on Windows and OSX.
 *   Chrome on Android.
 *   Mobile Safari on iOS.
+
+On mobile devices works best on iPhone 5 or higher. Your device must support WebGL.
 
 ## Controls
 
