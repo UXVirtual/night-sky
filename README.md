@@ -1,23 +1,35 @@
-Olympics App Prototype
-======================
+Night Sky Viewer
+================
 
 A prototype built using the [WebVR Boilerplate](https://github.com/borismus/webvr-boilerplate). This framework was
 chosen due to the larger number of contributors and superior performance. It can also be used as the basis for
 Google Cardboard apps. One of the contributors is the a main developer at AltSpaceVR.
 
+This application loads in real star position data from the [The HYG Database](https://github.com/astronexus/HYG-Database).
+
 ## Installation
 
 1.  Install Python 2.7
 
-2.  In the `scripts` folder run the following to install dependencies:
+2.  Install `setuptools` by following [these instructions](https://pypi.python.org/pypi/setuptools).
+
+3.  In the `scripts` folder run the following to install dependencies:
 
     ```
     python setup.py install
     ```
     
-3.  Install Webpack globally: `npm install webpack -g`
+4.  In the `online` folder run the following to install dependencies:
 
-4.  Install the Webpack development server: `npm install webpack-dev-server -g`
+    ```
+    npm install
+    ```
+    
+5.  In the `online` folder run the following to install dependencies:
+
+    ```
+    bower install
+    ```
 
 ## Developers
 
@@ -47,8 +59,7 @@ on remote debugging via desktop Chrome. This will work with Android 4.0 or highe
 python csv-to-json.py ../tmp/data.csv ../online/assets/data/data.json
 ```
 
-Star data comes from the [The HYG Database](https://github.com/astronexus/HYG-Database). The following data fields are 
-available:
+The following data fields are available:
 
 Version 3: The field content is very nearly the same as in Version 2, but the column headers are somewhat different, 
 and a few extra fields (for variable star range and multiple star info) have been added to the end of each record. For a 
