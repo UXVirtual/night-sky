@@ -3,8 +3,7 @@ Night Sky Viewer
 
 A prototype built using the [WebVR Boilerplate](https://github.com/borismus/webvr-boilerplate) as part of a larger
 mobile application for an upcoming campaign in 2016. This framework was chosen due to the larger number of contributors 
-and superior performance. It can also be used as the basis for Google Cardboard apps. One of the contributors is the a 
-main developer at AltSpaceVR.
+and superior performance.
 
 There are a number of optimisations to the performance and code of the prototype that haven't been made yet as the bulk
 of the prototype was created over a week's worth of development time.
