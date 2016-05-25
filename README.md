@@ -1,6 +1,8 @@
 Night Sky Viewer
 ================
 
+*** [Demo is available here](http://uxvirtual.com/demo/night-sky/) ***
+
 A prototype built using the [WebVR Boilerplate](https://github.com/borismus/webvr-boilerplate) as part of a larger
 mobile application for an upcoming campaign in 2016. This framework was chosen due to the larger number of contributors 
 and superior performance.
