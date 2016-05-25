@@ -1,11 +1,28 @@
 Night Sky Viewer
 ================
 
-A prototype built using the [WebVR Boilerplate](https://github.com/borismus/webvr-boilerplate). This framework was
-chosen due to the larger number of contributors and superior performance. It can also be used as the basis for
-Google Cardboard apps. One of the contributors is the a main developer at AltSpaceVR.
+A prototype built using the [WebVR Boilerplate](https://github.com/borismus/webvr-boilerplate) as part of a larger
+mobile application for an upcoming campaign in 2016. This framework was chosen due to the larger number of contributors 
+and superior performance. It can also be used as the basis for Google Cardboard apps. One of the contributors is the a 
+main developer at AltSpaceVR.
 
 This application loads in real star position data from the [The HYG Database](https://github.com/astronexus/HYG-Database).
+
+It is viewable both in the browser and on mobile devices. Works best with:
+
+*   Chrome on Windows and OSX.
+*   Chrome on Android.
+*   Mobile Safari on iOS.
+
+## Controls
+
+### Desktop
+
+Click and drag the mouse to pan around the scene.
+
+### Mobile
+
+Move your phone around to pan the scene. Only works with devices equipped with a gyroscope.
 
 ## Installation
 
@@ -29,6 +46,12 @@ This application loads in real star position data from the [The HYG Database](ht
 
     ```
     bower install
+    ```
+    
+6.  Generate the star data by running the `csv-to-json.py` in the `scripts` folder:
+
+    ```
+    python csv-to-json.py ../tmp/data.csv ../online/assets/data/data.json
     ```
 
 ## Developers
