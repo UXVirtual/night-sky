@@ -6,7 +6,13 @@ mobile application for an upcoming campaign in 2016. This framework was chosen d
 and superior performance. It can also be used as the basis for Google Cardboard apps. One of the contributors is the a 
 main developer at AltSpaceVR.
 
+There are a number of optimisations to the performance and code of the prototype that haven't been made yet as the bulk
+of the prototype was created over a week's worth of development time.
+
 This application loads in real star position data as seen from Earth from the [The HYG Database](https://github.com/astronexus/HYG-Database).
+
+The sky will rotate around a fixed point and there is support under the hood for adjusting the night sky in response to a
+change in the user's geographic location (currently this is set to somewhere near Auckland, New Zealand).
 
 It is viewable both in the browser and on mobile devices. Works best with:
 
@@ -25,6 +31,14 @@ Click and drag the mouse to pan around the scene.
 ### Mobile
 
 Move your phone around to pan the scene. Only works with devices equipped with a gyroscope.
+
+## TODO
+
+*   Optimise and provide fallbacks for lower-end devices.
+
+*   Enable Google Cardboard support.
+
+*   Split code into classes and make more object-oriented.
 
 ## Installation
 
