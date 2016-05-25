@@ -1191,7 +1191,7 @@ function loadStarData(){
 
         initFPSMeter();
 
-        setTimeout(function(){
+        /*setTimeout(function(){
             if(meter.fps < 30){
                 scene.remove(aMeshMirror);
                 if(typeof ms_Water !== 'undefined'){
@@ -1203,7 +1203,7 @@ function loadStarData(){
                 addBasicGroundPlane();
                 scene.add(aMeshMirror);
             }
-        },5000);
+        },5000);*/
 
 
 
