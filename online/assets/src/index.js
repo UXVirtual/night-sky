@@ -770,7 +770,7 @@ function initScene(){
 
 function loadStarData(){
 
-    $.getJSON( 'assets/data/data.json.gz', {}, function(data){
+    $.getJSON( 'assets/data/data.json', {}, function(data){
 
         //init typed arrays for star data
         var n = data.length;
