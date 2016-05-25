@@ -1,7 +1,5 @@
 import { SpriteText2D, textAlign } from 'three-text2d'
 
-//import THREE from 'three' //dont need to explicitly import THREE in here as we are already injecting it globally in webpack.config
-
 import './config/WebVRConfig'
 
 import 'webvr-polyfill/src/main'
@@ -9,12 +7,7 @@ import 'webvr-polyfill/src/main'
 import 'webvr-boilerplate'
 import dat from 'dat-gui'
 
-//import $ from 'jquery' //dont need to explicitly import jQuery in here as we are already injecting it globally in webpack.config
-
 import './vendor/three/examples/js/controls/MouseControls'
-//import 'three/examples/js/controls/MouseControls'
-
-//import 'three/examples/js/controls/TrackballControls'
 import 'three/examples/js/controls/VRControls'
 import 'three/examples/js/effects/VREffect'
 
@@ -38,8 +31,7 @@ import '../../bower_components/ocean/water-material.js'
 
 
 
-var sky, sphere, sphere2, moonLightDirection, moonLightDebugSphere, sphereContainer, lightDirDebugSphere, cameraContainer, skyboxContainer, skyboxContainer2, scene, renderer, camera, dollyCam;
-var lastCameraX, lastCameraY, lastCameraZ;
+var sky, sphere, sphere2, moonLightDebugSphere, sphereContainer, lightDirDebugSphere, cameraContainer, skyboxContainer, skyboxContainer2, scene, renderer, camera, dollyCam;
 var starData;
 var ms_Water;
 var skyBox;
@@ -54,7 +46,7 @@ var aMeshMirror;
 
 var moonLightDirection = new THREE.Vector3(0,0,0);
 
-var controls, dollyControls;
+var controls;
 
 var spriteCount = 0;
 
@@ -123,13 +115,7 @@ var oldAndroid = (androidVersion !== null && cmpVersions(androidVersion,'5', '.'
 
 var oldIOS = (iOSVersion !== null && cmpVersions(iOSVersion,'9', '_') < 0);
 
-var slowFPS = false;
-
 var canHandleOrientation = false;
-
-
-
-//console.log(THREE);
 
 (function() {
 
@@ -145,21 +131,17 @@ var canHandleOrientation = false;
 
     WebGLRenderingContext.prototype.getExtension = function() {
         var name = arguments[0];
-        //console.log("app requested extension: " + name);
         if (extensionToReject.indexOf(name) >= 0) {
-            //console.log("rejected extension: " + name);
             return null;
         }
         var ext = originalGetExtensionFunction.apply(this, arguments);
-        //console.log("extension " + name + " " + (ext ? "found" : "not found"));
         return ext;
     };
 
 }());
 
 window.addEventListener("compassneedscalibration", function(event) {
-    //console.log('Compass needs calibration');
-    //$('<div>Your compass needs calibration on your device. Please calibrate it before continuing.</div>').modal();
+
 }, true);
 
 
@@ -171,7 +153,6 @@ function checkCanHandleOrientation(){
     }
 
     function handleOrientation(event){
-        //console.log("Orientation:" + event.alpha + ", " + event.beta + ", " + event.gamma);
         canHandleOrientation = (event !== null); // event will be either null or with event data
     }
 }
@@ -220,21 +201,9 @@ function initFPSMeter(){
         graph:   1, // Whether to show history graph.
         history: 20 // How many history states to show in a graph.
     });
-
-    /*stats = new Stats();
-    stats.setMode( 0 ); // 0: fps, 1: ms, 2: mb
-
-    stats.domElement.style.position = 'absolute';
-    stats.domElement.style.left = '0px';
-    stats.domElement.style.top = '0px';
-
-    document.body.appendChild( stats.domElement );*/
-
-    //meter.showDuration();
 }
 
 function loadSkyBox() {
-    //var path = (oldAndroid || oldIOS) ? "assets/img/skybox3-lr/" : "assets/img/skybox3-hr/";
     var path = "assets/img/skybox3-hr/";
     var format = '.png';
     var urls = [
@@ -243,66 +212,17 @@ function loadSkyBox() {
         path + 'skybox_4' + format, path + 'skybox_5' + format
     ];
 
-    /*
-
-        ['left','right',
-        'up','down',
-        'backward','forward']
-
-     */
-
-    /*
-
-     'px.png', 'nx.png',
-     'py.png', 'ny.png',
-     'pz.png', 'nz.png'
-
-     */
-
-
-
-    /*var cubeMap = THREE.ImageUtils.loadTextureCube(urls);
-    cubeMap.format = THREE.RGBFormat;
-    cubeMap.flipY = false;
-
-    var cubeShader = THREE.ShaderLib['cube'];
-    cubeShader.uniforms['tCube'].value = cubeMap;
-
-    var skyBoxMaterial = new THREE.ShaderMaterial({
-        fragmentShader: cubeShader.fragmentShader,
-        vertexShader: cubeShader.vertexShader,
-        map: cubeMap,
-        uniforms: cubeShader.uniforms,
-        depthWrite: false,
-        side: THREE.BackSide
-    });*/
-
-    /*skyBox = new THREE.Mesh(
-        new THREE.SphereGeometry(100000, 32, 32),
-        new THREE.MeshBasicMaterial({
-            map: THREE.ImageUtils.loadTexture('assets/img/starmap_g4k.jpg'),
-
-            side: THREE.BackSide
-        })
-    );*/
-
     //skybox is now no longer using shaders and has actual geometry instead so we can rotate it
     var skyGeometry = new THREE.CubeGeometry( 100000, 100000, 100000 );
 
     var materialArray = [];
     for (var i = 0; i < 6; i++)
         materialArray.push( new THREE.MeshBasicMaterial({
-            map: /*THREE.ImageUtils.loadTexture( urls[i] )*/new THREE.TextureLoader().load(urls[i]),
+            map: new THREE.TextureLoader().load(urls[i]),
             side: THREE.BackSide
         }));
     var skyMaterial = new THREE.MeshFaceMaterial( materialArray );
     skyBox = new THREE.Mesh( skyGeometry, skyMaterial );
-
-    /*skyBox = new THREE.Mesh(
-        new THREE.BoxGeometry(100000, 100000, 100000),
-        skyBoxMaterial
-    );*/
-
 
     skyboxContainer = new THREE.Object3D();
 
@@ -323,8 +243,6 @@ function loadSkyBox() {
 
         var gui = new dat.GUI();
 
-
-        // gui.add( parameters )
         gui.add( parameters, 'rotX' ).min(0).max(359).step(1).name('Stars RotX');
         gui.add( parameters, 'rotY' ).min(0).max(359).step(1).name('Stars RotY');
         gui.add( parameters, 'rotZ' ).min(0).max(359).step(1).name('Stars RotZ');
@@ -332,10 +250,6 @@ function loadSkyBox() {
         gui.add( parameters, 'lightDirX' ).min(-2000).max(2000).step(50).name('LightDir X');
         gui.add( parameters, 'lightDirY' ).min(-2000).max(2000).step(50).name('LightDir Y');
         gui.add( parameters, 'lightDirZ' ).min(-2000).max(2000).step(50).name('LightDir Z');
-
-        /*gui.add( parameters, 'moonLightDirX' ).min(-2000).max(2000).step(50).name('MoonLightDir X');
-        gui.add( parameters, 'moonLightDirY' ).min(-2000).max(2000).step(50).name('MoonLightDir Y');
-        gui.add( parameters, 'moonLightDirZ' ).min(-2000).max(2000).step(50).name('MoonLightDir Z');*/
 
         gui.add( parameters, 'rotXFloor' ).min(0).max(359).step(1).name('Floor RotX');
         gui.add( parameters, 'rotYFloor' ).min(0).max(359).step(1).name('Floor RotY');
@@ -358,10 +272,6 @@ function loadSkyBox() {
         gui.add( parameters, 'sphere2RotY' ).min(0).max(359).step(1).name('Sphere2 RotY');
         gui.add( parameters, 'sphere2RotZ' ).min(0).max(359).step(1).name('Sphere2 RotZ');
 
-        /*gui.add( parameters, 'sphereContainerRotX' ).min(0).max(359).step(1).name('SphereCon RotX');
-        gui.add( parameters, 'sphereContainerRotY' ).min(0).max(359).step(1).name('SphereCon RotY');
-        gui.add( parameters, 'sphereContainerRotZ' ).min(0).max(359).step(1).name('SphereCon RotZ');*/
-
         gui.add( parameters, 'skyboxRotX' ).min(0).max(359).step(1).name('Skybox RotX');
         gui.add( parameters, 'skyboxRotY' ).min(0).max(359).step(1).name('Skybox RotY');
         gui.add( parameters, 'skyboxRotZ' ).min(0).max(359).step(1).name('Skybox RotZ');
@@ -373,9 +283,6 @@ function loadSkyBox() {
         gui.add( parameters, 'skyboxContainer2RotX' ).min(0).max(359).step(1).name('SkyboxCon2 RotX');
         gui.add( parameters, 'skyboxContainer2RotY' ).min(0).max(359).step(1).name('SkyboxCon2 RotY');
         gui.add( parameters, 'skyboxContainer2RotZ' ).min(0).max(359).step(1).name('SkyboxCon2 RotZ');
-
-
-
 
         gui.open();
     }
@@ -391,15 +298,12 @@ function addBasicGroundPlane(){
 
 function initScene(){
 
-    //console.log('initializing scene')
-
     // Setup three.js WebGL renderer. Note: Antialiasing is a big performance hit.
-// Only enable it if you actually need to.
+    // Only enable it if you actually need to.
     renderer = new THREE.WebGLRenderer({antialias: false, alpha: false}); //performance hits if antialias or alpha used
     renderer.setPixelRatio(window.devicePixelRatio);
-    //renderer.setClearColor( 0x00a6ec, 1 );
 
-// Append the canvas element created by the renderer to document body element.
+    // Append the canvas element created by the renderer to document body element.
     document.body.appendChild(renderer.domElement);
 
 
@@ -411,17 +315,14 @@ function initScene(){
     var starMagnitudeScaleFactor = 4; //higher number = smaller stars
     var starSpriteSize = 5; //scaling factor of star sprites for near stars that make up major constellations
 
-// Create a three.js scene.
+    // Create a three.js scene.
     scene = new THREE.Scene();
 
     window.scene = scene; //export as window.scene so the THREE.js inspector can access it
 
-    //var raycaster = new THREE.Raycaster();
-
     cameraContainer = new THREE.Object3D();
-    //cameraContainer.rotation.order = "YXZ"; // maybe not necessary
 
-// Create a three.js camera.
+    // Create a three.js camera.
     camera = new THREE.PerspectiveCamera(cameraFOV, window.innerWidth / window.innerHeight, 0.1, 2000000);
     dollyCam = new THREE.PerspectiveCamera();
 
@@ -429,34 +330,15 @@ function initScene(){
 
     cameraContainer.add(dollyCam);
 
-// Apply VR headset positional data to camera.
+    // Apply VR headset positional data to camera.
 
     controls = new THREE.VRControls(camera);
 
-    //dollyControls = new THREE.MouseControls(dollyCam);
-
-
-// Apply VR stereo rendering to renderer.
+    // Apply VR stereo rendering to renderer.
     var effect = new THREE.VREffect(renderer);
     effect.setSize(window.innerWidth, window.innerHeight);
 
-    var tick = 0;
-
-// Add a repeating grid as a skybox.
-    var boxWidth = 100;
     var loader = new THREE.TextureLoader();
-    //loader.load('assets/img/box.png', onTextureLoaded);
-
-    var rotWorldMatrix;
-
-// Rotate an object around an arbitrary axis in world space
-    function rotateAroundWorldAxis(object, axis, radians) {
-        rotWorldMatrix = new THREE.Matrix4();
-        rotWorldMatrix.makeRotationAxis(axis.normalize(), radians);
-        rotWorldMatrix.multiply(object.matrix);        // pre-multiply
-        object.matrix = rotWorldMatrix;
-        object.rotation.setFromRotationMatrix(object.matrix);
-    }
 
     // Add light
     var directionalLight = new THREE.DirectionalLight(0xffff55, 1);
@@ -467,7 +349,7 @@ function initScene(){
         addBasicGroundPlane();
     }else{
         // Load textures
-        var waterNormals = /*new THREE.ImageUtils.loadTexture('assets/img/waternormals.jpg')*/ new THREE.TextureLoader().load('assets/img/waternormals.jpg');
+        var waterNormals = new THREE.TextureLoader().load('assets/img/waternormals.jpg');
         waterNormals.wrapS = waterNormals.wrapT = THREE.RepeatWrapping;
 
 
@@ -489,109 +371,57 @@ function initScene(){
             ms_Water.material
         );
 
-
-
-
         aMeshMirror.add(ms_Water);
-
-        //console.log('Meshmirror: ',aMeshMirror);
-
-
-
-        //ms_Water.render();
     }
 
-    //$('<div>'+aMeshMirror.toString()+'</div>').modal();
+
+    sphereContainer = new THREE.Object3D;
+
+    var geometry = new THREE.SphereGeometry( 5, 32, 32 );
+
+    if(debugOn){
+        var material = new THREE.MeshBasicMaterial( {color: 0xffff00, wireframe: true, opacity: 0.05, transparent: true} );
+
+        sphere = new THREE.Mesh( geometry, material );
+    }else{
+        sphere = new THREE.Object3D;
+    }
 
 
 
+    if(debugOn){
+
+        var material2 = new THREE.MeshBasicMaterial( {color: 0xffffff, wireframe: true, opacity: 0.05, transparent: true} );
+
+        sphere2 = new THREE.Mesh( geometry, material2 );
+    }else{
+        sphere2 = new THREE.Object3D;
+    }
+
+    var moonMaterial = new THREE.MeshBasicMaterial( {color: 0xffffff, wireframe: false, opacity: 1, transparent: false/*, map: moonTexture*/} );
+
+    moonLightDebugSphere = new THREE.Mesh( geometry, moonMaterial );
 
 
-    //aMeshMirror.position.set(0,-20,0);
-    //aMeshMirror.lookAt(camera.position);
-
-    //if(debugOn){
-        sphereContainer = new THREE.Object3D;
-        //cameraContainer.rotation.order = "ZXY"
+    moonLightDebugSphere.position.set(parameters.moonLightDirX,parameters.moonLightDirY,parameters.moonLightDirZ);
 
 
-        var geometry = new THREE.SphereGeometry( 5, 32, 32 );
-
-        if(debugOn){
-            var material = new THREE.MeshBasicMaterial( {color: 0xffff00, wireframe: true, opacity: 0.05, transparent: true} );
-
-            sphere = new THREE.Mesh( geometry, material );
-        }else{
-            sphere = new THREE.Object3D;
-        }
+    lightDirDebugSphere = new THREE.Mesh( geometry, moonMaterial );
 
 
+    lightDirDebugSphere.position.set(parameters.lightDirX,parameters.lightDirY,parameters.lightDirZ);
 
-        if(debugOn){
-
-            var material2 = new THREE.MeshBasicMaterial( {color: 0xffffff, wireframe: true, opacity: 0.05, transparent: true} );
-
-            sphere2 = new THREE.Mesh( geometry, material2 );
-        }else{
-            sphere2 = new THREE.Object3D;
-        }
-
-        //var moonTexture = THREE.ImageUtils.loadTexture('assets/img/moon1024x512.jpg');
-        //var moonNormal = THREE.ImageUtils.loadTexture('assets/img/normal1024x512.jpg');
-
-        var moonMaterial = new THREE.MeshBasicMaterial( {color: 0xffffff, wireframe: false, opacity: 1, transparent: false/*, map: moonTexture*/} );
-
-        moonLightDebugSphere = new THREE.Mesh( geometry, moonMaterial );
-
-        //console.log(moonLightDebugSphere);
-
-        moonLightDebugSphere.position.set(parameters.moonLightDirX,parameters.moonLightDirY,parameters.moonLightDirZ);
-
-        //var moon = new THREE.Moon(moonTexture,moonNormal,moonLightDebugSphere);
+    lightDirDebugSphere.rotation.set(0,180,0);
+    lightDirDebugSphere.scale.set(moonScale,moonScale,moonScale);
 
 
+    scene.add(lightDirDebugSphere);
 
-
-
-
-        //lightDirDebugSphere = moon.mesh;
-
-        lightDirDebugSphere = new THREE.Mesh( geometry, moonMaterial );
-
-        //if(debugOn){
-            lightDirDebugSphere.position.set(parameters.lightDirX,parameters.lightDirY,parameters.lightDirZ);
-
-            lightDirDebugSphere.rotation.set(0,180,0);
-            lightDirDebugSphere.scale.set(moonScale,moonScale,moonScale);
-        //}else{
-        //    lightDirDebugSphere = new THREE.Object3D;
-        //}
-
-        scene.add(lightDirDebugSphere);
-
-        //aMeshMirror.add(moonLightDebugSphere);
-
-        sphereContainer.add( sphere );
-
-
+    sphereContainer.add( sphere );
 
     scene.add(aMeshMirror); //reflections don't work correctly unless aMeshMirror added to scene
     scene.add(cameraContainer);
-    //sphereContainer.eulerOrder = 'ZXY'; // change the eulerOrder to lock the rotation around the Y axis
-
-    //aMeshMirror.eulerOrder = 'ZXY';
-
-    //sphereContainer.eulerOrder = 'ZXY'; // change the eulerOrder to lock the rotation around the Y axis
-
-    //aMeshMirror.eulerOrder = 'ZXY';
-    //sphere.eulerOrder = 'ZXY';
-
-
     aMeshMirror.add(directionalLight); //reflections don't work correctly unless light added to scene
-    //scene.add(cameraContainer);
-    //}
-
-
 
 
     loader.load('assets/img/star_preview3.png', onStarTextureLoaded);
@@ -607,20 +437,12 @@ function initScene(){
     }
 
 
-// Create a VR manager helper to enter and exit VR mode.
+    // Create a VR manager helper to enter and exit VR mode.
     var params = {
         hideButton: true, // Default: false.
         isUndistorted: true // Default: false.
     };
     var manager = new WebVRManager(renderer, effect, params);
-
-
-    //if(debugOn){
-
-    //var collada = require('three-loaders-collada')(THREE);
-
-    //console.log('Collada: ',THREE.ColladaLoader)
-
 
     function initStars(texture){
         var x, y, z;
@@ -639,8 +461,6 @@ function initScene(){
             }
         }
 
-        //console.log('Children: ',scene.children);
-
         for(var l = 0; l < starData.count; l++){
 
             x = starData.x[l]*distanceScale;
@@ -652,8 +472,6 @@ function initScene(){
             y = y * normalizeRadius/starData.dist[l];
             z = z * normalizeRadius/starData.dist[l];
 
-
-
             var targetPointCloudGeometry;
             var doInsertPoint = true;
             var doInsertSprite = false;
@@ -661,55 +479,24 @@ function initScene(){
             var starLabel = (starData.proper[l] !== null) ? starData.proper[l] : (starData.bf[l] !== null) ? starData.bf[l] : (starData.gl[l] !== null) ? starData.gl[l] : null;
 
 
-            if(starLabel !== null && starData.mag[l] < 4 /* || starData.proper[l] === "Rigil Kentaurus" || starData.proper[l] === "Hadar"*/){
-
-                //doInsertPoint = false;
-
-
-                //console.log('Found',starData.proper[l]);
-                //targetPointCloudGeometry = pointCloudGeometries[7];
+            if(starLabel !== null && starData.mag[l] < 4){
 
                 doInsertSprite = true;
 
+                if(debugOn){
 
 
+                    if(starLabel !== null){
+                        var sprite = new SpriteText2D(starLabel, { align: new THREE.Vector2(0, 0),  font: '10px Arial', fillStyle: '#ffffff' , antialias: false })
+                        sprite.position.set(x,y,z);
+                        spriteContainer.add(sprite);
 
-
-                /*if(!(starData.proper[l] === "Polaris")){
-                    doInsertSprite = false;
-                    doInsertPoint = false;
-                }*/
-
-                //if(doInsertSprite && (starData.proper[l] !== null || starData.bf[l] !== null || starData.gl[l] !== null)){
-
-                    if(debugOn){
-
-
-                        if(starLabel !== null){
-                            var sprite = new SpriteText2D(starLabel, { align: new THREE.Vector2(0, 0),  font: '10px Arial', fillStyle: '#ffffff' , antialias: false })
-                            sprite.position.set(x,y,z);
-                            spriteContainer.add(sprite);
-
-                            sprite.lookAt(camera.position);
-
-                        }
-
+                        sprite.lookAt(camera.position);
 
                     }
-                //}
 
-
-
-
-
-
-
-
-
-
-            }//else{
-
-            //doInsertPoint = false;
+                }
+            }
 
             //assign points to geometries with specific colors - use first letter of spect value to define color
             //determine which color bucket the star should go into
@@ -742,10 +529,6 @@ function initScene(){
             }
 
             targetPointCloudGeometry = pointCloudGeometries[2];
-            //}
-
-
-
 
             //determine which size bucket the star should go into
 
@@ -753,22 +536,16 @@ function initScene(){
 
             if (starData.mag[l] < 0) {
                 targetSize = 0;
-                //doInsertPoint = false;
             } else if (starData.mag[l] >= 0 && starData.mag[l] < 1) {
                 targetSize = 1;
-                //doInsertPoint = false;
             } else if (starData.mag[l] >= 1 && starData.mag[l] < 2) {
                 targetSize = 2;
-                //doInsertPoint = false;
             } else if (starData.mag[l] >= 2 && starData.mag[l] < 3) {
                 targetSize = 3;
-                //doInsertPoint = false;
             } else if (starData.mag[l] >= 3 && starData.mag[l] < 4) {
                 targetSize = 4;
-                //doInsertPoint = false;
             } else if (starData.mag[l] >= 4 && starData.mag[l] < 5) {
                 targetSize = 5;
-                //doInsertPoint = false;
             } else if (starData.mag[l] >= 5 && starData.mag[l] < 6) {
                 targetSize = 6;
                 doInsertPoint = false;
@@ -781,49 +558,25 @@ function initScene(){
                 doInsertPoint = false;
             }
 
-
-            /*if(starData.dist[l] <= 35.5745){
-
-             }else if(starData.dist[l] > 35.5745 && starData.dist[l] <= 54.5256){
-             //doInsertPoint = false;
-             }else if(starData.dist[l] > 54.5256 && starData.dist[l] <= 71.1238){
-             //doInsertPoint = false;
-             }else if(starData.dist[l] > 71.1238 && starData.dist[l] <= 86.6551){
-             //doInsertPoint = false;
-             }else if(starData.dist[l] > 86.6551 && starData.dist[l] <= 101.0101){
-             //doInsertPoint = false;
-             }else if(starData.dist[l] > 101.0101){
-             //doInsertPoint = false;
-             }*/
-
-            //console.log(targetPointCloudGeometry);
-
             if(doInsertPoint && typeof targetPointCloudGeometry !== 'undefined' &&  typeof targetPointCloudGeometry[targetSize] !== 'undefined'){
                 targetPointCloudGeometry[targetSize].vertices.push(new THREE.Vector3(x,y,z));
             }
 
             if(doInsertSprite && doInsertPoint){
-                var material = new THREE.SpriteMaterial( { map: texture, color: 0xffffff, fog: false, depthTest: true/*(starMagnitudes-starData.mag[l]+1)*/ } );
+                var material = new THREE.SpriteMaterial( { map: texture, color: 0xffffff, fog: false, depthTest: true} );
 
                 spriteCount++;
 
-                //console.log(material);
 
                 var sprite = new THREE.Sprite( material );
                 sprite.position.set(x,y,z);
                 spriteContainer.add( sprite );
                 sprite.lookAt(camera.position);
 
-                //console.log(starData.mag[l]);
-
-                //sprite.rotation.y = 90 * Math.PI / 180;
 
                 sprite.scale.set((starMagnitudes-starData.mag[l])*starSpriteSize,(starMagnitudes-starData.mag[l])*starSpriteSize,(starMagnitudes-starData.mag[l])*starSpriteSize);
-                //sprite.translateZ( -1 );
+
             }
-
-
-
         }
 
         console.log("Stars generated: ",spriteCount);
@@ -864,7 +617,6 @@ function initScene(){
                 var material = new THREE.PointsMaterial({
                     color: color,
                     size: (starMagnitudes-m+1)/starMagnitudeScaleFactor,
-                    //map: texture, blending: THREE.AdditiveBlending, depthTest: false, transparent : true
                     depthTest: false, transparent : false
                     //wireframe property not supported on PointsMaterial
                 });
@@ -874,16 +626,9 @@ function initScene(){
                 pointClouds.push(pointCloud);
 
                 centerObject(pointCloud);
-                //scene.add(pointCloud);
             }
-
-
-
         }
     }
-
-    //window.addEventListener( 'resize', onWindowResize, false );
-
 
     function onWindowResize() {
 
@@ -910,32 +655,25 @@ function initScene(){
             stats.begin();
         }
 
-
-
-        //var delta = Math.min(timestamp - lastRender, 500);
         lastRender = timestamp;
 
         //dont render water if it doesnt exist
         if(typeof ms_Water !== 'undefined'){
 
             if(ms_Water !== null){
-                //if(!debugOn){
+
                 ms_Water.material.uniforms.time.value += 1.0 / 60.0;
                 ms_Water.render();
-                //}
+
             }
 
         }
-
-
 
         // Update VR headset position and apply to camera.
 
         if(typeof controls !== 'undefined'/* && typeof dollyControls !== 'undefined'*/){
 
             controls.update();
-            //dollyControls.update();
-
         }
 
 
@@ -944,8 +682,6 @@ function initScene(){
             // rotate the skybox around its axis
 
             pointClouds[i].rotation.set(parameters.rotX * Math.PI / 180,parameters.rotY * Math.PI / 180,parameters.rotZ * Math.PI / 180);
-
-            //console.log('Rotating pointcloud',pointClouds[i].rotation);
         }
 
         if(typeof cameraContainer !== 'undefined'){
@@ -961,44 +697,18 @@ function initScene(){
 
         if(typeof aMeshMirror !== 'undefined' && aMeshMirror !== null){
             aMeshMirror.rotation.set(parameters.rotXFloor * Math.PI / 180,parameters.rotYFloor * Math.PI / 180,parameters.rotZFloor * Math.PI / 180);
-            //aMeshMirror.rotation.set(parameters.sphereContainerRotX * Math.PI / 180,parameters.sphereContainerRotY * Math.PI / 180,parameters.sphereContainerRotZ * Math.PI / 180);
 
-            /*var position = new THREE.Vector3();
-            var quaternion = new THREE.Quaternion();
-            var scale = new THREE.Vector3();
-
-            cameraContainer.updateMatrixWorld( true );
-
-            cameraContainer.matrixWorld.decompose( position, quaternion, scale );
-
-            aMeshMirror.quaternion.copy( quaternion );
-
-            //var newQuaternion = THREE.Object3D.getWorldQuaternion( cameraContainer.position );
-
-            //aMeshMirror.matrix.makeRotationFromQuaternion(quaternion);
-            //aMeshMirror.matrix.setPosition(parameters.floorOffset,0,0);
-            //aMeshMirror.matrixAutoUpdate = false;
-
-            //aMeshMirror.quaternion = quaternion;
-            aMeshMirror.updateMatrix();*/
-
-            //if(debugOn){
             sphereContainer.rotation.set(parameters.sphereContainerRotX * Math.PI / 180,parameters.sphereContainerRotY * Math.PI / 180,parameters.sphereContainerRotZ * Math.PI / 180);
             sphere.rotation.set(parameters.sphereRotX * Math.PI / 180,parameters.sphereRotY * Math.PI / 180,parameters.sphereRotZ * Math.PI / 180);
             sphere2.rotation.set(parameters.sphere2RotX * Math.PI / 180,parameters.sphere2RotY * Math.PI / 180,parameters.sphere2RotZ * Math.PI / 180);
-            //}
 
-            //aMeshMirror.matrixNeedsUpdate = true;
-
-            //aMeshMirror.applyMatrix( new THREE.Matrix4().makeTranslation(parameters.floorOffset,0,0) );
-            //aMeshMirror.verticesNeedUpdate = true
 
             aMeshMirror.position.set(0,parameters.floorOffset,0);
-            //if(debugOn){
-                sphereContainer.rotation.set(parameters.sphereContainerRotX * Math.PI / 180,parameters.sphereContainerRotY * Math.PI / 180,parameters.sphereContainerRotZ * Math.PI / 180);
-                sphere.rotation.set(parameters.sphereRotX * Math.PI / 180,parameters.sphereRotY * Math.PI / 180,parameters.sphereRotZ * Math.PI / 180);
-                sphere2.rotation.set(parameters.sphere2RotX * Math.PI / 180,parameters.sphere2RotY * Math.PI / 180,parameters.sphere2RotZ * Math.PI / 180);
-            //}
+
+            sphereContainer.rotation.set(parameters.sphereContainerRotX * Math.PI / 180,parameters.sphereContainerRotY * Math.PI / 180,parameters.sphereContainerRotZ * Math.PI / 180);
+            sphere.rotation.set(parameters.sphereRotX * Math.PI / 180,parameters.sphereRotY * Math.PI / 180,parameters.sphereRotZ * Math.PI / 180);
+            sphere2.rotation.set(parameters.sphere2RotX * Math.PI / 180,parameters.sphere2RotY * Math.PI / 180,parameters.sphere2RotZ * Math.PI / 180);
+
 
         }
 
@@ -1022,21 +732,8 @@ function initScene(){
             ms_Water.material.uniforms.sunDirection.value = directionalLight.position.normalize();
         }
 
+        render(timestamp);
 
-
-
-
-
-
-
-        //if((typeof skipRenderCheck !== 'undefined' && skipRenderCheck) && (camera.rotation.x !== lastCameraX || camera.rotation.y !== lastCameraY || camera.rotation.z !== lastCameraZ)){
-            // Render the scene through the manager.
-            //manager.render(scene, camera, timestamp);
-        //renderer.render(scene, camera);
-            render(timestamp);
-
-
-        //}
 
         if(typeof meter !== 'undefined') {
 
@@ -1048,25 +745,19 @@ function initScene(){
             stats.end();
         }
 
-
-
-
-
     }
 
     function render(timestamp) {
-
-        //console.log('Rendering...');
 
         manager.render(scene, camera, timestamp);
 
     }
 
-// Kick off animation loop
+    // Kick off animation loop
     onWindowResize();
     animate(performance ? performance.now() : Date.now(),true);
 
-// Reset the position sensor when 'z' pressed.
+    // Reset the position sensor when 'z' pressed.
     function onKey(event) {
         if (typeof controls !== 'undefined' && event.keyCode == 90) { // z
             controls.resetSensor();
@@ -1079,11 +770,7 @@ function initScene(){
 
 function loadStarData(){
 
-    //console.log('Getting star data...')
-
     $.getJSON( 'assets/data/data.json.gz', {}, function(data){
-
-        //console.log(data);
 
         //init typed arrays for star data
         var n = data.length;
@@ -1122,25 +809,6 @@ function loadStarData(){
             i++;
         }
 
-       // console.log('Star data loaded.');
-
-        //console.log(data);
-
-
-
-        //console.log('Modernizr: ',Modernizr);
-
-
-        /*Modernizr.on('testname', function( result ) {
-            if (result) {
-                //console.log('The test passed!');
-            }
-            else {
-                //console.log('The test failed!');
-            }
-        });*/
-
-
         Modernizr.addTest('highres', function() {
             // for opera
             var ratio = '2.99/2';
@@ -1166,22 +834,14 @@ function loadStarData(){
             return isHighRes;
         });
 
-        //rendering appears to be partially broken on iOS 8 on latest version of three.js iOS 9 has about 90% market share so we can recommend users update to that version
+        //rendering appears to be partially broken on iOS 8 on latest version of three.js iOS 9 has about 90% market
+        //share so we can recommend users update to that version
+        //TODO: add three-orbit-controls library to allow mouse controls to be used by default on devices that don't
+        //support motion controls
 
-
-        //TODO: add three-orbit-controls library to allow mouse controls to be used by default on devices that don't support motion controls
-
-        //TODO: move these checks out into a first-run function along with the FPS test to determin if device is capable of running the experience.
-        //Magnometer should be optional as it is only required to get the correct orientation, but user should be warned that their direction won't be accurate
-        setTimeout(function(){
-            //$('<div>iOS: '+md.is('iOS')+' iOS Version '+md.versionStr('iOS')+' Android: '+md.is('Android')+' Android Version '+md.versionStr('Android')+' Old Android: '+oldAndroid+' Old iOS: '+oldIOS+' WebGL support: '+Modernizr.webgl+' deviceMotion: '+Modernizr.devicemotion+' deviceOrientation: '+Modernizr.deviceorientation+' deviceOrientation (actual): '+canHandleOrientation+' WebGL Extensions: '+Modernizr.webglextensions+' Geolocation: '+Modernizr.geolocation+' highRes: '+Modernizr.highres+'</div>').modal();
-        },5000);
-
-
-
-        //alert('Mobile grade: '+ md.mobileGrade())
-
-        //alert('Device: '+detector);
+        //TODO: move these checks out into a first-run function along with the FPS test to determin if device is capable
+        //of running the experience. Magnometer should be optional as it is only required to get the correct
+        //orientation, but user should be warned that their direction won't be accurate
 
         checkCanHandleOrientation();
 
@@ -1190,45 +850,12 @@ function loadStarData(){
         loadSkyBox();
 
         initFPSMeter();
-
-        /*setTimeout(function(){
-            if(meter.fps < 30){
-                scene.remove(aMeshMirror);
-                if(typeof ms_Water !== 'undefined'){
-                    //ms_Water.dispose();
-
-                    //console.log('Water material: ',ms_Water);
-                }
-
-                addBasicGroundPlane();
-                scene.add(aMeshMirror);
-            }
-        },5000);*/
-
-
-
-        //initSky();
-
-
     });
 }
 
 
 
 $(document).ready(function(){
-
-    /*document.addEventListener('touchstart', this.touchstart);
-    document.addEventListener('touchmove', this.touchmove);
-
-    function touchstart(e) {
-        e.preventDefault()
-    }
-
-    function touchmove(e) {
-        e.preventDefault()
-    }*/
-
-    //console.log('document is ready')
     loadStarData();
 });
 
